@@ -222,6 +222,3 @@ $RECYCLE.BIN/
 
 # Environments
 bot-env/
-
-# Secrets
-secrets.py
