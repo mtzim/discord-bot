@@ -35,7 +35,7 @@ class ChannelTime(commands.Cog):
     def time_channel_name(self):
         jst_tz = datetime.now(pytz.timezone("Asia/Tokyo"))
         # %m/%d %H:%M %Z (MM/DD HH:MM TZ)
-        return jst_tz.strftime("%m/%d %H:%M %Z")
+        return jst_tz.strftime("%m/%d, %H:%M %Z")
 
     def get_voice_channel_id(self, guild):
         channel_id = os.getenv("TIME_CHANNEL")
