@@ -29,17 +29,6 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="?", description="Nothing yet", intents=intents)
 
-
-""" @bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-    if message.content.startswith("$hello"):
-        await message.channel.send("Hello!")
-
-    # allow commands to still be processed
-    await bot.process_commands(message) """
-
 # Changes to async in discord.py 2.0
 
 
