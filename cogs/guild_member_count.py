@@ -1,8 +1,8 @@
 import os
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
-
+# Channel edit rate limit twice per 10 minutes
 class GuildMemberCount(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -12,35 +12,10 @@ class GuildMemberCount(commands.Cog):
     async def on_ready(self):
         print(f"Logged into Discord as {self.bot.user} (ID: {self.bot.user.id})")
 
-        # list all guilds bot is connected to
-        if len(self.bot.guilds) > 0:
-            print("Connected to the following guilds:")
-
-            for count, guild in enumerate(self.bot.guilds):
-                print(
-                    f"{count+1}) {guild.name}#{guild.id} - Members: {len(guild.members)}"
-                )
-                await self.update_channel_member_count(guild)
-
-    # called when a new member joins a guild
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        print(f"{member} joined {member.guild}.")
-        await self.update_channel_member_count(member.guild)
-
-    # called when a member leaves or gets removed from a guild
-    @commands.Cog.listener()
-    async def on_member_remove(self, member):
-        print(f"{member} left {member.guild}.")
-        await self.update_channel_member_count(member.guild)
-
-    @commands.command(name="update")
-    async def update_count_cmd(self, ctx):
-        print(f"update channel count command called by {ctx.author}")
-        await self.update_channel_member_count(ctx.guild, ctx)
+        await self.update_member_count_task.start()
 
     # if the guild has a member count channel, update it
-    async def update_channel_member_count(self, guild, *args):
+    async def update_channel_member_count(self, guild):
         channel_id = self.get_channel_id_member_count(guild)
         if channel_id != None:
             channel = discord.utils.get(guild.channels, id=channel_id)
@@ -49,12 +24,6 @@ class GuildMemberCount(commands.Cog):
             try:
                 await channel.edit(name=channel_name)
             except discord.errors.Forbidden:
-                if len(args) > 0:
-                    if isinstance(args[0], discord.ext.commands.context.Context):
-                        ctx = args[0]
-                        await ctx.send(
-                            f"I don't have permission to edit the member count channel for this server."
-                        )
                 print(
                     f"Bot doesn't have permission to edit the member count channel. (Guild: {guild.name}#{guild.id}, Channel: {channel.name}#{channel_id})"
                 )
@@ -73,6 +42,21 @@ class GuildMemberCount(commands.Cog):
             return int(channel_id)
 
         return None
+
+    # 6 minutes to avoid rate limit (2 per 10 minutes)
+    @tasks.loop(minutes=6)
+    async def update_member_count_task(self):
+        print(f"Updating member counts...")
+
+        # list all guilds bot is connected to
+        if len(self.bot.guilds) > 0:
+            print("Connected to the following guilds:")
+
+            for count, guild in enumerate(self.bot.guilds):
+                print(
+                    f"{count+1}) {guild.name}#{guild.id} - Members: {len(guild.members)}"
+                )
+                await self.update_channel_member_count(guild)
 
 
 async def setup(bot):
