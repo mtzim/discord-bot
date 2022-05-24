@@ -4,7 +4,6 @@ import discord
 from db import SqlDatabase as SQL
 from dotenv import load_dotenv
 from discord.ext import commands
-from helper import MyHelpCommand
 from customhelper import CustomHelpCommand
 
 
