@@ -222,3 +222,6 @@ $RECYCLE.BIN/
 
 # Environments
 bot-env/
+
+# Databases
+*.db
