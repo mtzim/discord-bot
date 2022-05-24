@@ -4,6 +4,8 @@ import discord
 from db import SqlDatabase as SQL
 from dotenv import load_dotenv
 from discord.ext import commands
+from helper import MyHelpCommand
+from customhelper import CustomHelpCommand
 
 
 class MyBot(commands.Bot):
@@ -20,6 +22,7 @@ class MyBot(commands.Bot):
         if "command_prefix" not in kwargs:
             kwargs["command_prefix"] = "?"
 
+        # super().__init__(*args, help_command=MyHelpCommand(), **kwargs)
         super().__init__(*args, **kwargs)
 
         self.initial_extensions = [
