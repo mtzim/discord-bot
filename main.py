@@ -1,6 +1,7 @@
 import os
 import logging
 import discord
+from db import SqlDatabase as SQL
 from dotenv import load_dotenv
 from discord.ext import commands
 
@@ -8,8 +9,9 @@ from discord.ext import commands
 class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
 
+        self.db = SQL("example.db")
+
         if "intents" not in kwargs:
-            print(f"intents weren't found, loading from within class")
             intents = discord.Intents.default()
             intents.members = True
             intents.message_content = True
@@ -23,18 +25,46 @@ class MyBot(commands.Bot):
         self.initial_extensions = [
             "cogs.shutdown",
             "cogs.timezone_presence",
+            "cogs.guild_member_count",
         ]
 
     async def setup_hook(self):
         for ext in self.initial_extensions:
             await self.load_extension(ext)
-        print(f"setup_hook running...")
+
+        self.db.execute(
+            """CREATE TABLE IF NOT EXISTS guilds
+            (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+            guild_name TEXT NOT NULL,
+            guild_id INTEGER NOT NULL UNIQUE, 
+             member_count_channel_id INTEGER)"""
+        )
 
     async def close(self):
+        self.db.close()
         await super().close()
 
     async def on_ready(self):
         print(f"MyBot is ready!")
+
+        if len(self.guilds) > 0:
+            print("Connected to the following guilds:")
+
+            for count, guild in enumerate(self.guilds):
+                print(
+                    f"{count+1}) {guild.name}#{guild.id} - Members: {len(guild.members)}"
+                )
+                self.db.add_guild(guild.name, guild.id)
+
+    async def on_guild_join(self, guild: discord.Guild):
+        self.db.add_guild(guild.name, guild.id)
+
+    async def on_guild_remove(self, guild: discord.Guild):
+        self.db.delete_guild(guild.id)
+
+    async def on_guild_update(self, before: discord.Guild, after: discord.Guild):
+        if before.name != after.name:
+            self.db.update_guild_name(after.name, after.id)
 
     async def on_message(self, message):
         if message.content == "$test":
