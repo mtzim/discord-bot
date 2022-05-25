@@ -21,8 +21,8 @@ class MyBot(commands.Bot):
         if "command_prefix" not in kwargs:
             kwargs["command_prefix"] = "?"
 
-        # super().__init__(*args, help_command=MyHelpCommand(), **kwargs)
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, help_command=CustomHelpCommand(), **kwargs)
+        # super().__init__(*args, **kwargs)
 
         self.initial_extensions = [
             "cogs.shutdown",
@@ -59,12 +59,15 @@ class MyBot(commands.Bot):
                 self.db.add_guild(guild.name, guild.id)
 
     async def on_guild_join(self, guild: discord.Guild):
+        """Adds the guild entry to the database when the bot joins the guild."""
         self.db.add_guild(guild.name, guild.id)
 
     async def on_guild_remove(self, guild: discord.Guild):
+        """Removes the guild entry from the database if the bot leaves or gets removed from the guild."""
         self.db.delete_guild(guild.id)
 
     async def on_guild_update(self, before: discord.Guild, after: discord.Guild):
+        """Updates the guild name in the database to match the server's guild name if it changes."""
         if before.name != after.name:
             self.db.update_guild_name(after.name, after.id)
 
