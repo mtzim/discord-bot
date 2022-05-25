@@ -21,13 +21,12 @@ class CustomHelpCommand(commands.HelpCommand):
         )
 
     def add_field(self, name, value, inline: Optional[bool] = False):
+        """Adds a Cog/Category with all commands related to it to the help message."""
         self.help_msg = self.help_msg.add_field(name=name, value=value, inline=inline)
 
     def add_ending(self):
-        trailing_text = """\n\n**Use `?help <Category>` for more information about a category.**
-        **Use `?help <Command>` for more information about a command.**\n
+        trailing_text = """\n\n**Use `?help <Command>` for more information about a command.**\n
         **Examples:**
-        `?help Shutdown` for an overview of the Shutdown category.
         `?help set_channel` for detailed help for the set_channel command.\n
         **Useful links:**
         [Github](https://github.com/mtzim/discord-bot)"""
@@ -38,6 +37,9 @@ class CustomHelpCommand(commands.HelpCommand):
     def add_section(
         self, commands: Sequence[commands.Command[Any, ..., Any]], /, *, heading: str
     ):
+        """Joins multiple commands from a Cog/Category together in a comma seperated string
+        to pass as a single value into add_field since it only takes one value in relation
+        to its name"""
         if not commands:
             return
 
@@ -75,6 +77,10 @@ class CustomHelpCommand(commands.HelpCommand):
 
         return await self.get_destination().send(embed=self.help_msg)
 
+    def command_not_found(self, string: str, /) -> str:
+        self_category = self.no_category
+        return f"No command called `{string}` found."
+
     async def send_cog_help(self, cog: Cog, /) -> None:
         return await super().send_cog_help(cog)
 
@@ -82,4 +88,11 @@ class CustomHelpCommand(commands.HelpCommand):
         return await super().send_group_help(group)
 
     async def send_command_help(self, command: Command[Any, ..., Any], /) -> None:
-        return await super().send_command_help(command)
+
+        signature = self.get_command_signature(command)
+        if command.help:
+            usage = f"{command.help}"
+        else:
+            usage = f"Usage: `{signature}`"
+
+        return await self.get_destination().send(content=usage)

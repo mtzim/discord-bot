@@ -2,7 +2,7 @@ import discord
 from db import SqlDatabase as SQL
 from discord.ext import commands, tasks
 
-# Channel edit rate limit twice per 10 minutes, check how close to rate limit
+# Channel edit rate limit twice per 10 minutes
 class GuildMemberCount(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -36,13 +36,13 @@ class GuildMemberCount(commands.Cog):
         else:
             print(f"channel id not found, can't update member count for {guild}")
 
-    @commands.command(name="set_channel")
+    @commands.command(name="set_channel", help="Usage: `?set_channel <CHANNEL ID>`")
     @commands.is_owner()
     async def set_member_count_channel_id(self, ctx, message: int):
         # look at invoking command and get chid from it
         channel_id = message
         channel = discord.utils.get(ctx.guild.channels, id=channel_id)
-        # validate channel existing
+        # validate channel to update exists
         # short circuit
         if (channel != None) and (channel_id == channel.id):
             self.db.update_guild_channel_id(ctx.guild.id, channel.id)
