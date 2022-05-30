@@ -48,7 +48,7 @@ class CustomHelpCommand(commands.HelpCommand):
             name = command.name
             entry = f"{name}"
             command_list.append(f"`{entry}`")
-        value = ",".join(command_list)
+        value = "**,** ".join(command_list)
         self.add_field(name=heading, value=value)
 
     async def send_bot_help(

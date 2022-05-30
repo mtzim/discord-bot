@@ -24,11 +24,7 @@ class MyBot(commands.Bot):
         super().__init__(*args, help_command=CustomHelpCommand(), **kwargs)
         # super().__init__(*args, **kwargs)
 
-        self.initial_extensions = [
-            "cogs.shutdown",
-            "cogs.timezone_presence",
-            "cogs.guild_member_count",
-        ]
+        self.initial_extensions = ["cogs.timezone_presence", "cogs.guild_member_count"]
 
     async def setup_hook(self):
         for ext in self.initial_extensions:
@@ -47,7 +43,7 @@ class MyBot(commands.Bot):
         await super().close()
 
     async def on_ready(self):
-        print(f"MyBot is ready!")
+        print(f"Logged into Discord as {self.user} (ID: {self.user.id})")
 
         if len(self.guilds) > 0:
             print("Connected to the following guilds:")
@@ -71,11 +67,6 @@ class MyBot(commands.Bot):
         if before.name != after.name:
             self.db.update_guild_name(after.name, after.id)
 
-    async def on_message(self, message):
-        if message.content == "$test":
-            await message.reply("I hear you!")
-        await super().process_commands(message)
-
 
 # Setup logging
 if not os.path.exists("./logs"):
@@ -91,9 +82,29 @@ logger.addHandler(handler)
 # Load data from .env file
 load_dotenv()
 
+
+def load_commands(bot):
+    """Load default commands"""
+
+    @bot.command()
+    @commands.is_owner()
+    async def shutdown(ctx: commands.Context):
+        await ctx.bot.close()
+
+    @bot.command()
+    async def ping(ctx: commands.Context):
+        await ctx.reply(f"Pong! `{round(ctx.bot.latency*1000)}ms`")
+
+    """ @bot.command()
+    async def invite(ctx: commands.Context):
+        pass """
+
+
 # Changes to async in discord.py 2.0
 
 if __name__ == "__main__":
     token = os.getenv("DISCORD_TOKEN")
     bot = MyBot()
+    load_commands(bot)
+
     bot.run(token)

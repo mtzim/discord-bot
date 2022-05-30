@@ -11,7 +11,7 @@ class GuildMemberCount(commands.Cog):
     # called when the client is done preparing the data received from Discord
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Logged into Discord as {self.bot.user} (ID: {self.bot.user.id})")
+        print(f"* Cog: Guild Member Count loaded.")
 
         await self.update_member_count_task.start()
 
@@ -42,7 +42,7 @@ class GuildMemberCount(commands.Cog):
         # look at invoking command and get chid from it
         channel_id = message
         channel = discord.utils.get(ctx.guild.channels, id=channel_id)
-        # validate channel to update exists
+        # check if channel exists
         # short circuit
         if (channel != None) and (channel_id == channel.id):
             self.db.update_guild_channel_id(ctx.guild.id, channel.id)
@@ -75,16 +75,11 @@ class GuildMemberCount(commands.Cog):
     # Set accordingly to avoid rate limit (2 per 10 minutes)
     @tasks.loop(minutes=6)
     async def update_member_count_task(self):
-        print(f"Updating member counts...")
+        # print(f"Updating member counts...")
 
-        # list all guilds bot is connected to
+        # update member count for all guilds bot is connected to
         if len(self.bot.guilds) > 0:
-            print("Connected to the following guilds:")
-
-            for count, guild in enumerate(self.bot.guilds):
-                print(
-                    f"{count+1}) {guild.name}#{guild.id} - Members: {len(guild.members)}"
-                )
+            for guild in self.bot.guilds:
                 await self.update_channel_member_count(guild)
 
 
