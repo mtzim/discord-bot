@@ -90,7 +90,7 @@ load_dotenv()
 def load_commands(bot):
     """Load default commands"""
 
-    @bot.command()
+    @bot.command(hidden=True)
     @commands.is_owner()
     async def shutdown(ctx: commands.Context):
         await ctx.bot.close()
