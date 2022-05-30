@@ -13,9 +13,9 @@ class MyBot(commands.Bot):
         self.db = SQL("example.db")
 
         if "intents" not in kwargs:
-            intents = discord.Intents.default()
-            intents.members = True
-            intents.message_content = True
+            intents = discord.Intents.all()
+            # intents.members = True
+            # intents.message_content = True
             kwargs["intents"] = intents
 
         if "command_prefix" not in kwargs:
@@ -24,7 +24,11 @@ class MyBot(commands.Bot):
         super().__init__(*args, help_command=CustomHelpCommand(), **kwargs)
         # super().__init__(*args, **kwargs)
 
-        self.initial_extensions = ["cogs.timezone_presence", "cogs.guild_member_count"]
+        self.initial_extensions = [
+            "cogs.timezone_presence",
+            "cogs.guild_member_count",
+            "cogs.utility",
+        ]
 
     async def setup_hook(self):
         for ext in self.initial_extensions:
