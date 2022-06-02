@@ -1,7 +1,7 @@
 import os
 import logging
 import discord
-from db import SqlDatabase as SQL
+from db_helper import SqlHelper as SQL
 from dotenv import load_dotenv
 from discord.ext import commands
 from customhelper import CustomHelpCommand
@@ -10,7 +10,7 @@ from customhelper import CustomHelpCommand
 class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
 
-        self.db = SQL("example.db")
+        self.db = SQL("discord_bot_data")
 
         if "intents" not in kwargs:
             intents = discord.Intents.all()
@@ -33,14 +33,6 @@ class MyBot(commands.Bot):
     async def setup_hook(self):
         for ext in self.initial_extensions:
             await self.load_extension(ext)
-
-        self.db.execute(
-            """CREATE TABLE IF NOT EXISTS guilds
-            (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-            guild_name TEXT NOT NULL,
-            guild_id INTEGER NOT NULL UNIQUE, 
-             member_count_channel_id INTEGER)"""
-        )
 
     async def close(self):
         self.db.close()
