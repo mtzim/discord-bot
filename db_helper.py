@@ -10,10 +10,11 @@ class SqlHelper:
     def __init__(self, db_name):
         self.username = os.getenv("DB_USERNAME")
         self.password = os.getenv("DB_PASSWORD")
+        self.host = os.getenv("DB_HOST")
         self.db_con = database.connect(
             user=self.username,
             password=self.password,
-            host="localhost",
+            host=self.host,
             database=f"{db_name}",
         )
         self.db_cur = self.db_con.cursor()
