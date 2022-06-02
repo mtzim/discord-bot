@@ -1,12 +1,12 @@
 import discord
-from db import SqlDatabase as SQL
+from db_helper import SqlHelper as SQL
 from discord.ext import commands, tasks
 
 # Channel edit rate limit twice per 10 minutes
 class GuildMemberCount(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = SQL("example.db")
+        self.db = SQL("discord_bot_data")
 
     # called when the client is done preparing the data received from Discord
     @commands.Cog.listener()
