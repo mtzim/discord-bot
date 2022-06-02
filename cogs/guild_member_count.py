@@ -42,9 +42,9 @@ class GuildMemberCount(commands.Cog):
         # look at invoking command and get chid from it
         channel_id = message
         channel = discord.utils.get(ctx.guild.channels, id=channel_id)
+
         # check if channel exists
-        # short circuit
-        if (channel != None) and (channel_id == channel.id):
+        if channel != None:
             self.db.update_guild_channel_id(ctx.guild.id, channel.id)
             await ctx.reply(
                 f"Updated the channel id successfully, Member Count Channel Id: {channel.id}."
@@ -71,6 +71,25 @@ class GuildMemberCount(commands.Cog):
             await ctx.reply("Invalid Channel id, please make sure it's an integer.")
         else:
             await ctx.send(f"Error: {type(err)}, {err}")
+
+    @commands.command(name="get_channel", help="Usage: `?get_channel`")
+    @commands.is_owner()
+    async def get_member_count_channel(self, ctx: commands.Context):
+        channel_id = self.db.get_guild_channel_id(ctx.guild.id)
+
+        # check if a channel has been set
+        if channel_id != None:
+            channel = discord.utils.get(ctx.guild.channels, id=channel_id)
+
+            # check if channel still exists in the guild
+            if channel != None:
+                await ctx.reply(
+                    f"Member count channel currently set to `{channel} (ID:{channel_id})`"
+                )
+            else:
+                await ctx.reply(f"Channel no longer exists, please set a new one.")
+        else:
+            await ctx.reply(f"No channel currently set.")
 
     # Set accordingly to avoid rate limit (2 per 10 minutes)
     @tasks.loop(minutes=6)
