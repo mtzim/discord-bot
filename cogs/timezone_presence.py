@@ -10,7 +10,7 @@ class PresenceTime(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Channel Timezone Cog loaded.")
+        print(f"* Cog: Channel Timezone loaded.")
         self.update_time_task.start()
 
     def time_channel_name(self):
@@ -20,7 +20,7 @@ class PresenceTime(commands.Cog):
 
     @tasks.loop(seconds=20)
     async def update_time_task(self):
-        print(f"Time task running...")
+        # print(f"Time task running...")
 
         presence_time = self.time_channel_name()
         game = discord.Game(presence_time)

@@ -1,9 +1,22 @@
-import sqlite3
+import os
+from dotenv import load_dotenv
+import mysql.connector as database
+
+# Load data from .env file
+load_dotenv()
 
 
-class SqlDatabase:
+class SqlHelper:
     def __init__(self, db_name):
-        self.db_con = sqlite3.connect(db_name)
+        self.username = os.getenv("DB_USERNAME")
+        self.password = os.getenv("DB_PASSWORD")
+        self.host = os.getenv("DB_HOST")
+        self.db_con = database.connect(
+            user=self.username,
+            password=self.password,
+            host=self.host,
+            database=f"{db_name}",
+        )
         self.db_cur = self.db_con.cursor()
 
     def __enter__(self):
@@ -43,13 +56,13 @@ class SqlDatabase:
 
     def get_guild_channel_id(self, guild_id):
         if self.guild_exists(guild_id):
-            sql = "SELECT member_count_channel_id FROM guilds WHERE guild_id=?"
+            sql = "SELECT member_count_channel_id FROM guilds WHERE guild_id=%s"
             self.execute(sql, (guild_id,))
             return self.fetchone()[0]
         return None
 
     def guild_exists(self, guild_id):
-        sql = "SELECT guild_id FROM guilds WHERE guild_id=?"
+        sql = "SELECT guild_id FROM guilds WHERE guild_id=%s"
         if len(self.query(sql, (guild_id,))) > 0:
             return True
         return False
@@ -58,7 +71,7 @@ class SqlDatabase:
         if self.guild_exists(guild_id):
             return False
         self.execute(
-            "INSERT INTO guilds (guild_name, guild_id) VALUES (?,?)",
+            "INSERT INTO guilds (guild_name, guild_id) VALUES (%s,%s)",
             (
                 guild_name,
                 guild_id,
@@ -69,14 +82,14 @@ class SqlDatabase:
 
     def delete_guild(self, guild_id):
         if self.guild_exists(guild_id):
-            self.execute("DELETE FROM guilds WHERE guild_id=?", (guild_id,))
+            self.execute("DELETE FROM guilds WHERE guild_id=%s", (guild_id,))
             self.commit()
             return True
         return False
 
     def update_guild_channel_id(self, guild_id, channel_id):
         if self.guild_exists(guild_id):
-            sql = "UPDATE guilds SET member_count_channel_id=? WHERE guild_id=?"
+            sql = "UPDATE guilds SET member_count_channel_id=%s WHERE guild_id=%s"
             self.execute(
                 sql,
                 (
@@ -91,7 +104,7 @@ class SqlDatabase:
     def update_guild_name(self, guild_name, guild_id):
         if self.guild_exists(guild_id):
             self.execute(
-                "UPDATE guilds SET guild_name=? WHERE guild_id=?",
+                "UPDATE guilds SET guild_name=%s WHERE guild_id=%s",
                 (
                     guild_name,
                     guild_id,

@@ -1,17 +1,17 @@
 import discord
-from db import SqlDatabase as SQL
+from db_helper import SqlHelper as SQL
 from discord.ext import commands, tasks
 
-# Channel edit rate limit twice per 10 minutes, check how close to rate limit
+# Channel edit rate limit twice per 10 minutes
 class GuildMemberCount(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = SQL("example.db")
+        self.db = SQL("discord_bot_data")
 
     # called when the client is done preparing the data received from Discord
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Logged into Discord as {self.bot.user} (ID: {self.bot.user.id})")
+        print(f"* Cog: Guild Member Count loaded.")
 
         await self.update_member_count_task.start()
 
@@ -36,15 +36,15 @@ class GuildMemberCount(commands.Cog):
         else:
             print(f"channel id not found, can't update member count for {guild}")
 
-    @commands.command(name="set_channel")
-    @commands.is_owner()
+    @commands.command(name="set_channel", help="Usage: `?set_channel <CHANNEL ID>`")
+    @commands.has_guild_permissions(manage_channels=True)
     async def set_member_count_channel_id(self, ctx, message: int):
         # look at invoking command and get chid from it
         channel_id = message
         channel = discord.utils.get(ctx.guild.channels, id=channel_id)
-        # validate channel existing
-        # short circuit
-        if (channel != None) and (channel_id == channel.id):
+
+        # check if channel exists
+        if channel != None:
             self.db.update_guild_channel_id(ctx.guild.id, channel.id)
             await ctx.reply(
                 f"Updated the channel id successfully, Member Count Channel Id: {channel.id}."
@@ -61,30 +61,47 @@ class GuildMemberCount(commands.Cog):
                 "Channel Id not found within this server, please try again."
             )
 
+    @commands.command(name="get_channel", help="Usage: `?get_channel`")
+    @commands.has_guild_permissions(manage_channels=True)
+    async def get_member_count_channel(self, ctx: commands.Context):
+        channel_id = self.db.get_guild_channel_id(ctx.guild.id)
+
+        # check if a channel has been set
+        if channel_id != None:
+            channel = discord.utils.get(ctx.guild.channels, id=channel_id)
+
+            # check if channel still exists in the guild
+            if channel != None:
+                await ctx.reply(
+                    f"Member count channel currently set to `{channel} (ID:{channel_id})`"
+                )
+            else:
+                await ctx.reply(f"Channel no longer exists, please set a new one.")
+        else:
+            await ctx.reply(f"No channel currently set.")
+
+    @get_member_count_channel.error
     @set_member_count_channel_id.error
-    async def set_member_count_cmd_error(self, ctx, err):
+    async def member_count_cmd_error(self, ctx, err):
         if type(err) == discord.ext.commands.errors.MissingRequiredArgument:
             await ctx.reply(
-                "Invalid format - Try: [prefix]set_channel [CHANNEL_ID]\nChannel ID should be a valid ID for an already existing channel within the server."
+                f"Invalid format - Try: `?set_channel <CHANNEL ID>`\nChannel ID should be a valid ID for an already existing channel within the server."
             )
         elif type(err) == discord.ext.commands.errors.BadArgument:
-            await ctx.reply("Invalid Channel id, please make sure it's an integer.")
+            await ctx.reply(f"Invalid Channel id, please make sure it's an integer.")
+        elif type(err) == discord.ext.commands.error.MissingPermissions:
+            await ctx.reply(f"You lack the necessary permissions for this command.")
         else:
             await ctx.send(f"Error: {type(err)}, {err}")
 
     # Set accordingly to avoid rate limit (2 per 10 minutes)
     @tasks.loop(minutes=6)
     async def update_member_count_task(self):
-        print(f"Updating member counts...")
+        # print(f"Updating member counts...")
 
-        # list all guilds bot is connected to
+        # update member count for all guilds bot is connected to
         if len(self.bot.guilds) > 0:
-            print("Connected to the following guilds:")
-
-            for count, guild in enumerate(self.bot.guilds):
-                print(
-                    f"{count+1}) {guild.name}#{guild.id} - Members: {len(guild.members)}"
-                )
+            for guild in self.bot.guilds:
                 await self.update_channel_member_count(guild)
 
 
