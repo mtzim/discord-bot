@@ -1,0 +1,13 @@
+version: "3.5"
+
+services:
+  # Discord bot
+  joshu:
+    image: joshu-discord-bot
+    build:
+      context: .
+    container_name: joshu
+    user: 1000:1000
+    env_file:
+      - .env
+    restart: "unless-stopped"
