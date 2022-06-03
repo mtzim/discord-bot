@@ -15,5 +15,5 @@ COPY --chown=1000:1000 . .
 USER root
 RUN pip3 install -r requirements.txt
 
-# CMD ["python3","-u","main.py"]
-ENTRYPOINT ["sleep", "infinity"]
+CMD ["python3","-u","main.py"]
+# ENTRYPOINT ["sleep", "infinity"]
