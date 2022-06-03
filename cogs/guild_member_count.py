@@ -37,7 +37,7 @@ class GuildMemberCount(commands.Cog):
             print(f"channel id not found, can't update member count for {guild}")
 
     @commands.command(name="set_channel", help="Usage: `?set_channel <CHANNEL ID>`")
-    @commands.is_owner()
+    @commands.has_guild_permissions(manage_channels=True)
     async def set_member_count_channel_id(self, ctx, message: int):
         # look at invoking command and get chid from it
         channel_id = message
@@ -61,19 +61,8 @@ class GuildMemberCount(commands.Cog):
                 "Channel Id not found within this server, please try again."
             )
 
-    @set_member_count_channel_id.error
-    async def set_member_count_cmd_error(self, ctx, err):
-        if type(err) == discord.ext.commands.errors.MissingRequiredArgument:
-            await ctx.reply(
-                "Invalid format - Try: [prefix]set_channel [CHANNEL_ID]\nChannel ID should be a valid ID for an already existing channel within the server."
-            )
-        elif type(err) == discord.ext.commands.errors.BadArgument:
-            await ctx.reply("Invalid Channel id, please make sure it's an integer.")
-        else:
-            await ctx.send(f"Error: {type(err)}, {err}")
-
     @commands.command(name="get_channel", help="Usage: `?get_channel`")
-    @commands.is_owner()
+    @commands.has_guild_permissions(manage_channels=True)
     async def get_member_count_channel(self, ctx: commands.Context):
         channel_id = self.db.get_guild_channel_id(ctx.guild.id)
 
@@ -90,6 +79,20 @@ class GuildMemberCount(commands.Cog):
                 await ctx.reply(f"Channel no longer exists, please set a new one.")
         else:
             await ctx.reply(f"No channel currently set.")
+
+    @get_member_count_channel.error
+    @set_member_count_channel_id.error
+    async def member_count_cmd_error(self, ctx, err):
+        if type(err) == discord.ext.commands.errors.MissingRequiredArgument:
+            await ctx.reply(
+                f"Invalid format - Try: `?set_channel <CHANNEL ID>`\nChannel ID should be a valid ID for an already existing channel within the server."
+            )
+        elif type(err) == discord.ext.commands.errors.BadArgument:
+            await ctx.reply(f"Invalid Channel id, please make sure it's an integer.")
+        elif type(err) == discord.ext.commands.error.MissingPermissions:
+            await ctx.reply(f"You lack the necessary permissions for this command.")
+        else:
+            await ctx.send(f"Error: {type(err)}, {err}")
 
     # Set accordingly to avoid rate limit (2 per 10 minutes)
     @tasks.loop(minutes=6)
