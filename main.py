@@ -10,8 +10,6 @@ from customhelper import CustomHelpCommand
 class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
 
-        self.db = SQL("discord_bot_data")
-
         if "intents" not in kwargs:
             intents = discord.Intents.all()
             # intents.members = True
@@ -35,7 +33,6 @@ class MyBot(commands.Bot):
             await self.load_extension(ext)
 
     async def close(self):
-        self.db.close()
         await super().close()
 
     async def on_ready(self):
@@ -48,20 +45,28 @@ class MyBot(commands.Bot):
                 print(
                     f"{count+1}) {guild.name}#{guild.id} - Members: {len(guild.members)}"
                 )
-                self.db.add_guild(guild.name, guild.id)
+                db = SQL("discord_bot_data")
+                db.add_guild(guild.name, guild.id)
+                db.close()
 
     async def on_guild_join(self, guild: discord.Guild):
         """Adds the guild entry to the database when the bot joins the guild."""
-        self.db.add_guild(guild.name, guild.id)
+        db = SQL("discord_bot_data")
+        db.add_guild(guild.name, guild.id)
+        db.close()
 
     async def on_guild_remove(self, guild: discord.Guild):
         """Removes the guild entry from the database if the bot leaves or gets removed from the guild."""
-        self.db.delete_guild(guild.id)
+        db = SQL("discord_bot_data")
+        db.delete_guild(guild.id)
+        db.close()
 
     async def on_guild_update(self, before: discord.Guild, after: discord.Guild):
         """Updates the guild name in the database to match the server's guild name if it changes."""
         if before.name != after.name:
-            self.db.update_guild_name(after.name, after.id)
+            db = SQL("discord_bot_data")
+            db.update_guild_name(after.name, after.id)
+            db.close()
 
 
 # Setup logging

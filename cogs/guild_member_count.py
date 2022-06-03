@@ -6,7 +6,6 @@ from discord.ext import commands, tasks
 class GuildMemberCount(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = SQL("discord_bot_data")
 
     # called when the client is done preparing the data received from Discord
     @commands.Cog.listener()
@@ -17,7 +16,9 @@ class GuildMemberCount(commands.Cog):
 
     # if the guild has a member count channel, update it
     async def update_channel_member_count(self, guild):
-        channel_id = self.db.get_guild_channel_id(guild.id)
+        db = SQL("discord_bot_data")
+        channel_id = db.get_guild_channel_id(guild.id)
+        db.close()
 
         if channel_id != None:
             channel = discord.utils.get(guild.channels, id=channel_id)
@@ -45,7 +46,9 @@ class GuildMemberCount(commands.Cog):
 
         # check if channel exists
         if channel != None:
-            self.db.update_guild_channel_id(ctx.guild.id, channel.id)
+            db = SQL("discord_bot_data")
+            db.update_guild_channel_id(ctx.guild.id, channel.id)
+            db.close()
             await ctx.reply(
                 f"Updated the channel id successfully, Member Count Channel Id: {channel.id}."
             )
@@ -64,7 +67,9 @@ class GuildMemberCount(commands.Cog):
     @commands.command(name="get_channel", help="Usage: `?get_channel`")
     @commands.has_guild_permissions(manage_channels=True)
     async def get_member_count_channel(self, ctx: commands.Context):
-        channel_id = self.db.get_guild_channel_id(ctx.guild.id)
+        db = SQL("discord_bot_data")
+        channel_id = db.get_guild_channel_id(ctx.guild.id)
+        db.close()
 
         # check if a channel has been set
         if channel_id != None:
@@ -89,7 +94,7 @@ class GuildMemberCount(commands.Cog):
             )
         elif type(err) == discord.ext.commands.errors.BadArgument:
             await ctx.reply(f"Invalid Channel id, please make sure it's an integer.")
-        elif type(err) == discord.ext.commands.error.MissingPermissions:
+        elif type(err) == discord.ext.commands.errors.MissingPermissions:
             await ctx.reply(f"You lack the necessary permissions for this command.")
         else:
             await ctx.send(f"Error: {type(err)}, {err}")
@@ -97,7 +102,7 @@ class GuildMemberCount(commands.Cog):
     # Set accordingly to avoid rate limit (2 per 10 minutes)
     @tasks.loop(minutes=6)
     async def update_member_count_task(self):
-        # print(f"Updating member counts...")
+        print(f"Updating member counts...")
 
         # update member count for all guilds bot is connected to
         if len(self.bot.guilds) > 0:
