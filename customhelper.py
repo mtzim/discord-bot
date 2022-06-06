@@ -9,6 +9,7 @@ class CustomHelpCommand(commands.HelpCommand):
     def __init__(self, **options: Any) -> None:
         self.no_category: str = options.pop("no_category", "MyBot")
         self.sort_commands: bool = options.pop("sort_commands", True)
+        options["command_attrs"] = {"help": "Usage: `?help <Command>`"}
         super().__init__(**options)
 
         description = """**<:botAvatar:978780970377433178> Hello! I'm Mybot!**\n
