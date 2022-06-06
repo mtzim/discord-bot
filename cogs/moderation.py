@@ -37,6 +37,7 @@ class Moderation(commands.Cog):
         self.bot = bot
 
     @commands.has_guild_permissions(manage_messages=True, read_message_history=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.command(help=f"{prune_help}")
     async def prune(self, ctx: commands.Context, *, msg: str):
         args = msg.split(" ")
@@ -377,6 +378,8 @@ class Moderation(commands.Cog):
             )
         elif type(err) == discord.ext.commands.errors.MissingPermissions:
             await ctx.reply(f"You lack the necessary permissions for this command.")
+        elif type(err) == discord.ext.commands.errors.BotMissingPermissions:
+            await ctx.reply(f"{err}")
         else:
             await ctx.send(f"Error: {type(err)}, {err}")
 
