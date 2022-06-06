@@ -36,7 +36,7 @@ class Moderation(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
 
-    @commands.has_guild_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True, read_message_history=True)
     @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.command(help=f"{prune_help}")
     async def prune(self, ctx: commands.Context, *, msg: str):
