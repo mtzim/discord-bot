@@ -18,14 +18,15 @@
 Check out the [discord.py Documentation](https://discordpy.readthedocs.io/en/latest/intro.html) for additional information if not using docker.
 
 ## About
-A simple Discord bot currently under development.
+A simple Discord bot with a set of utility and moderation tools.
 
 **Current Features:**
-
+- Prune messages
 - Member count channel
 - JST timezone display
 - User avatar fetcher
 - User info fetcher
+- ...More to come
 ## Installation
 ### Dependencies
 Install [Python 3.10](https://www.python.org/downloads/) or above if not using docker.
@@ -42,7 +43,7 @@ If you're using docker and need to access the database on localhost, consider ad
 1. Clone this repository.
 1. Rename `.env.sample` to `.env` and add the information for your bot and database.
 
-**Run the following commands while inside this repository to build and run a docker container with this code.**
+**Run the following commands while inside the cloned repository to build and run a docker container with this code.**
 #### Linux
 ```
 sudo docker compose build

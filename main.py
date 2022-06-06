@@ -26,6 +26,7 @@ class MyBot(commands.Bot):
             "cogs.timezone_presence",
             "cogs.guild_member_count",
             "cogs.utility",
+            "cogs.moderation",
         ]
 
     async def setup_hook(self):

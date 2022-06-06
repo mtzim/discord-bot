@@ -9,6 +9,7 @@ class CustomHelpCommand(commands.HelpCommand):
     def __init__(self, **options: Any) -> None:
         self.no_category: str = options.pop("no_category", "MyBot")
         self.sort_commands: bool = options.pop("sort_commands", True)
+        options["command_attrs"] = {"help": "Usage: `?help <Command>`"}
         super().__init__(**options)
 
         description = """**<:botAvatar:978780970377433178> Hello! I'm Mybot!**\n
@@ -81,8 +82,10 @@ class CustomHelpCommand(commands.HelpCommand):
         self_category = self.no_category
         return f"No command called `{string}` found."
 
+    # Treat cog help as a command when user uses `help CogName`
     async def send_cog_help(self, cog: Cog, /) -> None:
-        return await super().send_cog_help(cog)
+        ignore_cogs = f"No command called `{cog.qualified_name}` found."
+        return await self.get_destination().send(content=ignore_cogs)
 
     async def send_group_help(self, group: Group[Any, ..., Any], /) -> None:
         return await super().send_group_help(group)
