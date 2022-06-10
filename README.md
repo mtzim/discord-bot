@@ -35,6 +35,11 @@ Install [MariaDB](https://mariadb.org/download/) version 10.6.x or above.
 
 Configure MariaDB for [Remote Client Access](https://mariadb.com/kb/en/configuring-mariadb-for-remote-client-access/) and/or [Local Client Access](https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-18-04).
 
+Create a table in your database with the following schema:
+```
+CREATE TABLE IF NOT EXISTS guilds (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, guild_name TEXT NOT NULL, guild_id INTEGER NOT NULL UNIQUE, prefix TEXT NOT NULL DEFAULT '?', member_count_channel_id INTEGER)
+```
+
 If you're using docker and need to access the database on localhost, consider adding `network_mode: "host"` to the `docker-compose.yml` file if you have trouble connecting to the database.
 ### Docker
 1. Install [Docker](https://docs.docker.com/engine/install/) on your preferred operating system.
