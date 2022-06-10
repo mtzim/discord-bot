@@ -61,6 +61,27 @@ class SqlHelper:
             return self.fetchone()[0]
         return None
 
+    def get_prefix(self, guild_id):
+        if self.guild_exists(guild_id):
+            sql = "SELECT prefix FROM guilds WHERE guild_id=%s"
+            self.execute(sql, (guild_id,))
+            return self.fetchone()[0]
+        return None
+
+    def set_prefix(self, guild_id, new_prefix) -> bool:
+        if self.guild_exists(guild_id):
+            sql = "UPDATE guilds SET prefix=%s WHERE guild_id=%s"
+            self.execute(
+                sql,
+                (
+                    new_prefix,
+                    guild_id,
+                ),
+            )
+            self.commit()
+            return True
+        return False
+
     def guild_exists(self, guild_id):
         sql = "SELECT guild_id FROM guilds WHERE guild_id=%s"
         if len(self.query(sql, (guild_id,))) > 0:
