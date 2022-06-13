@@ -91,10 +91,11 @@ class CustomHelpCommand(commands.HelpCommand):
         return await super().send_group_help(group)
 
     async def send_command_help(self, command: Command[Any, ..., Any], /) -> None:
+        ctx = self.context
 
         signature = self.get_command_signature(command)
         if command.help:
-            usage = f"{command.help}"
+            usage = f"{command.help.replace(f'?{command}',f'{ctx.prefix}{command}')}"
         else:
             usage = f"Usage: `{signature}`"
 
