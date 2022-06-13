@@ -114,6 +114,11 @@ def load_commands(bot):
             await ctx.reply(f"Prefix successfully changed to `{new_prefix}`")
         db.close()
 
+    @prefix.error
+    async def prefix_err(ctx, err):
+        if type(err) == commands.errors.MissingRequiredArgument:
+            await ctx.reply(f"Missing required argument `<NEW PREFIX>`")
+
     """ @bot.command()
     async def invite(ctx: commands.Context):
         pass """
