@@ -21,6 +21,7 @@ Check out the [discord.py Documentation](https://discordpy.readthedocs.io/en/lat
 A simple Discord bot with a set of utility and moderation tools.
 
 **Current Features:**
+- Set your own prefix (Default: `?`)
 - Prune messages
 - Member count channel
 - JST timezone display
