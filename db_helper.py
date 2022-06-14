@@ -1,4 +1,5 @@
 import os
+from typing import List
 from dotenv import load_dotenv
 import mysql.connector as database
 
@@ -100,6 +101,21 @@ class SqlHelper:
         )
         self.commit()
         return True
+
+    # Clean up orphaned guild entries in the database that occur when someone removes the bot from a guild while it's offline
+    def check_guilds_remove(self, guild_list: List):
+        self.execute("SELECT guild_id FROM guilds")
+        guilds_in_db = self.fetchall()
+
+        # Using a set to avoid O(n) lookup for deletion continually in for loop
+        guild_ids = [guilds[0] for guilds in guilds_in_db]
+        guilds_dict = set(guild_ids)
+
+        # Delete any guilds in the database that the bot isn't apart of
+        for guild in guild_list:
+            guilds_dict.remove(guild.id)
+        for guild_rmv in guilds_dict:
+            self.execute("DELETE FROM guilds WHERE guild_id=%s", (guild_rmv,))
 
     def delete_guild(self, guild_id):
         if self.guild_exists(guild_id):

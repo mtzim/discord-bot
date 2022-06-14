@@ -49,13 +49,16 @@ class MyBot(commands.Bot):
         if len(self.guilds) > 0:
             print("Connected to the following guilds:")
 
-            for count, guild in enumerate(self.guilds):
+            guilds_in = self.guilds
+            for count, guild in enumerate(guilds_in):
                 print(
                     f"{count+1}) {guild.name}#{guild.id} - Members: {len(guild.members)}"
                 )
                 db = SQL("discord_bot_data")
                 db.add_guild(guild.name, guild.id)
-                db.close()
+
+            db.check_guilds_remove(guilds_in)
+            db.close()
 
     async def on_guild_join(self, guild: Guild):
         """Adds the guild entry to the database when the bot joins the guild."""
