@@ -52,8 +52,13 @@ class CustomHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        description = f"""**<:botAvatar:978780970377433178> Hello! I'm {bot.user.name}!**\n
-        Below you can see all the commands I know.
+        self.help_msg.set_author(
+            name=f"Hello! I'm {bot.user.name}!",
+            icon_url=f"{bot.user.display_avatar.url}",
+        )
+        # self.help_msg.set_thumbnail(url=f"{bot.user.display_avatar.url}")
+
+        description = f"""Below you can see all the commands I know.
         If you have any questions or comments about something ask on [Github](https://github.com/mtzim/discord-bot).\n
         **Have a nice day!**"""
 
