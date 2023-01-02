@@ -1,11 +1,14 @@
 import os
 import logging
+import discord
 from discord import Message, Intents, Guild
 from db_helper import SqlHelper as SQL
 from dotenv import load_dotenv
 from discord.ext import commands
 from customhelper import CustomHelpCommand
-from typing import Union, List
+from typing import Union, List, Literal, Optional
+from discord.ext import commands
+from discord.ext.commands import Greedy, Context
 
 
 class MyBot(commands.Bot):
@@ -122,6 +125,48 @@ def load_commands(bot):
         if type(err) == commands.errors.MissingRequiredArgument:
             await ctx.reply(f"Missing required argument `<NEW PREFIX>`")
 
+    @bot.tree.command(name="hello")
+    async def my_command(interaction: discord.Interaction) -> None:
+        await interaction.response.send_message("Hello from my command!")
+
+    # Sync slash commands globally or to specific guilds
+    @bot.command()
+    @commands.guild_only()
+    @commands.is_owner()
+    async def sync(
+        ctx: Context,
+        guilds: Greedy[discord.Object],
+        spec: Optional[Literal["~", "*", "^"]] = None,
+    ) -> None:
+        if not guilds:
+            if spec == "~":
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+            elif spec == "*":
+                ctx.bot.tree.copy_global_to(guild=ctx.guild)
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+            elif spec == "^":
+                ctx.bot.tree.clear_commands(guild=ctx.guild)
+                await ctx.bot.tree.sync(guild=ctx.guild)
+                synced = []
+            else:
+                synced = await ctx.bot.tree.sync()
+
+            await ctx.send(
+                f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
+            )
+            return
+
+        ret = 0
+        for guild in guilds:
+            try:
+                await ctx.bot.tree.sync(guild=guild)
+            except discord.HTTPException:
+                pass
+            else:
+                ret += 1
+
+        await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
+
     """ @bot.command()
     async def invite(ctx: commands.Context):
         pass """
@@ -131,6 +176,7 @@ def load_commands(bot):
 
 if __name__ == "__main__":
     token = os.getenv("DISCORD_TOKEN")
+    gid = os.getenv("GUILD_ID")
     bot = MyBot()
     load_commands(bot)
 

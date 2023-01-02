@@ -78,6 +78,7 @@ class CustomHelpCommand(commands.HelpCommand):
                 if self.sort_commands
                 else list(commands)
             )
+            # One section will be named after the bot class's name in main.py
             self.add_section(commands, heading=category)
 
         self.add_ending()
