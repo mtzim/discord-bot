@@ -16,7 +16,7 @@ class GuildMemberCount(commands.Cog):
 
     # if the guild has a member count channel, update it
     async def update_channel_member_count(self, guild):
-        db = SQL("discord_bot_data")
+        db = SQL()
         channel_id = db.get_guild_channel_id(guild.id)
         db.close()
 
@@ -46,7 +46,7 @@ class GuildMemberCount(commands.Cog):
 
         # check if channel exists
         if channel != None:
-            db = SQL("discord_bot_data")
+            db = SQL()
             db.update_guild_channel_id(ctx.guild.id, channel.id)
             db.close()
             await ctx.reply(
@@ -67,7 +67,7 @@ class GuildMemberCount(commands.Cog):
     @commands.command(name="get_channel", help="Usage: `?get_channel`")
     @commands.has_guild_permissions(manage_channels=True)
     async def get_member_count_channel(self, ctx: commands.Context):
-        db = SQL("discord_bot_data")
+        db = SQL()
         channel_id = db.get_guild_channel_id(ctx.guild.id)
         db.close()
 
