@@ -44,7 +44,7 @@ Configure MariaDB for [Remote Client Access](https://mariadb.com/kb/en/configuri
 Create a table in your database with the following schema:
 
 ```
-CREATE TABLE IF NOT EXISTS guilds (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, guild_name TEXT NOT NULL, guild_id INTEGER NOT NULL UNIQUE, prefix TEXT NOT NULL DEFAULT '?', member_count_channel_id INTEGER)
+CREATE TABLE IF NOT EXISTS guilds (id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL UNIQUE, guild_name TEXT NOT NULL, guild_id INTEGER NOT NULL UNIQUE, prefix TEXT NOT NULL DEFAULT '?', member_count_channel_id INTEGER)
 ```
 
 If you're using docker and need to access the database on localhost, consider adding `network_mode: "host"` to the `docker-compose.yml` file if you have trouble connecting to the database.

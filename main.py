@@ -31,7 +31,7 @@ class MyBot(commands.Bot):
         ]
 
     async def get_prefix(self, message: Message, /) -> Union[List[str], str]:
-        db = SQL("discord_bot_data")
+        db = SQL()
         prefix = db.get_prefix(message.guild.id)
         db.close()
         return prefix
@@ -54,7 +54,7 @@ class MyBot(commands.Bot):
                 print(
                     f"{count+1}) {guild.name}#{guild.id} - Members: {len(guild.members)}"
                 )
-                db = SQL("discord_bot_data")
+                db = SQL()
                 db.add_guild(guild.name, guild.id)
 
             db.check_guilds_remove(guilds_in)
@@ -62,20 +62,20 @@ class MyBot(commands.Bot):
 
     async def on_guild_join(self, guild: Guild):
         """Adds the guild entry to the database when the bot joins the guild."""
-        db = SQL("discord_bot_data")
+        db = SQL()
         db.add_guild(guild.name, guild.id)
         db.close()
 
     async def on_guild_remove(self, guild: Guild):
         """Removes the guild entry from the database if the bot leaves or gets removed from the guild."""
-        db = SQL("discord_bot_data")
+        db = SQL()
         db.delete_guild(guild.id)
         db.close()
 
     async def on_guild_update(self, before: Guild, after: Guild):
         """Updates the guild name in the database to match the server's guild name if it changes."""
         if before.name != after.name:
-            db = SQL("discord_bot_data")
+            db = SQL()
             db.update_guild_name(after.name, after.id)
             db.close()
 
@@ -110,7 +110,7 @@ def load_commands(bot):
     @bot.command(help=f"Usage: `?prefix <NEW PREFIX>`")
     @commands.has_guild_permissions(manage_guild=True)
     async def prefix(ctx: commands.Context, new_prefix: str):
-        db = SQL("discord_bot_data")
+        db = SQL()
         if not db.set_prefix(ctx.guild.id, new_prefix):
             await ctx.reply(f"Unable to change prefix.")
         else:
