@@ -130,7 +130,7 @@ def load_commands(bot):
         await interaction.response.send_message("Hello from my command!")
 
     # Sync slash commands globally or to specific guilds
-    @bot.command()
+    @bot.command(hidden=True)
     @commands.guild_only()
     @commands.is_owner()
     async def sync(
