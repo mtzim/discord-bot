@@ -112,8 +112,9 @@ class General(commands.Cog):
                 f"**Command**: `{input}`\n**Description**: {desc}\n\n**Options**:\n"
             )
 
+            help_cmd_msg = help_cmd_msg + option_txt
             view = NavigationView()
-            await interaction.response.send_message(content=option_txt, view=view)
+            await interaction.response.send_message(content=help_cmd_msg, view=view)
 
 
 async def setup(bot):
