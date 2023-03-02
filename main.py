@@ -4,7 +4,6 @@ import discord
 from discord import Message, Intents, Guild
 from db_helper import SqlHelper as SQL
 from dotenv import load_dotenv
-from discord.ext import commands
 from customhelper import CustomHelpCommand
 from typing import Union, List, Literal, Optional
 from discord.ext import commands
@@ -20,18 +19,21 @@ class MyBot(commands.Bot):
             # intents.message_content = True
             kwargs["intents"] = intents
 
+        # Default prefix is assigned during database table creation
         if "command_prefix" not in kwargs:
             kwargs["command_prefix"] = self.get_prefix
 
         super().__init__(*args, help_command=CustomHelpCommand(), **kwargs)
-        # super().__init__(*args, **kwargs)
 
         self.initial_extensions = [
             "cogs.timezone_presence",
             "cogs.guild_member_count",
             "cogs.utility",
             "cogs.moderation",
+            "cogs.general",
         ]
+
+        self.help_dict = {}
 
     async def get_prefix(self, message: Message, /) -> Union[List[str], str]:
         db = SQL()
@@ -125,7 +127,7 @@ def load_commands(bot):
         if type(err) == commands.errors.MissingRequiredArgument:
             await ctx.reply(f"Missing required argument `<NEW PREFIX>`")
 
-    @bot.tree.command(name="hello")
+    @bot.tree.command(name="hello", extras={"module": "Default"})
     async def my_command(interaction: discord.Interaction) -> None:
         await interaction.response.send_message("Hello from my command!")
 
@@ -144,6 +146,22 @@ def load_commands(bot):
             elif spec == "*":
                 ctx.bot.tree.copy_global_to(guild=ctx.guild)
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
+                # use to form help command
+                # help = {"Default": ["sync","help","test"], "Cog": ["ping","update"]}
+                # for each command define extras section for which module they belong
+                # make a dictionary with key = module names and value = list of command names
+                # extras={"module": "Default"}
+                slash_commands = bot.tree.get_commands()
+                # help_dict = {}
+                for x in slash_commands:
+                    if "module" in x.extras.keys():
+                        cmd_category = x.extras["module"]
+                        if cmd_category not in bot.help_dict:
+                            bot.help_dict[cmd_category] = [x.name]
+                        else:
+                            hlist_vals = bot.help_dict[cmd_category]
+                            hlist_vals.append(x.name)
+                            bot.help_dict[cmd_category] = hlist_vals
             elif spec == "^":
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
                 await ctx.bot.tree.sync(guild=ctx.guild)
@@ -166,10 +184,6 @@ def load_commands(bot):
                 ret += 1
 
         await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
-
-    """ @bot.command()
-    async def invite(ctx: commands.Context):
-        pass """
 
 
 # Changes to async in discord.py 2.0
