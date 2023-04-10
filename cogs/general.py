@@ -6,6 +6,27 @@ from discord import app_commands
 from typing import Dict, List, Optional
 
 
+def option_details(command_info: app_commands.Command, option: str) -> str:
+    """
+    Format and return details about a command's parameter.
+
+    :param command_info: app_commands.Command, the command that the parameter belongs to
+    :param option: str, the command's parameter that needs parsing
+
+    :return: str, the formatted details that belong to a command's parameter
+    """
+    param = command_info.get_parameter(option)
+    option_type = f"[{str(param.type).split('.')[1].upper()}]"
+    required = param.required
+    command = param.command.name
+    description = ""
+    format_param_desc = param.description.split("]")[1].strip()
+    if param.name != format_param_desc:
+        description = format_param_desc
+
+    return f"**Option**: {option}\n**Description**: {description}\n**Type**: {option_type}\n**Command**: `{command}`\n**Required**: {required}"
+
+
 class NavigationView(View):
     def __init__(
         self,
@@ -148,18 +169,10 @@ class SingleView(View):
     async def btn_choose_callback(
         self, interaction: discord.Interaction, button: Button
     ):
-        parse_selection = self.option_data.split("-")[0].split(":")[1].split("[")
-        opt = parse_selection[0].strip()
-        opt_type = f"[{parse_selection[1]}"
-        param = self.cmd_info.get_parameter(opt)
-        req = param.required
-        param_parent = param.command.name
-        desc = ""
-        fmt_pdesc = param.description.split("]")[1].strip()
-        if param.name != fmt_pdesc:
-            desc = fmt_pdesc
-
-        param_details = f"**Option**: {opt}\n**Description**: {desc}\n**Type**: {opt_type}\n**Command**: `{param_parent}`\n**Required**: {req}"
+        parse_option = (
+            self.option_data.split("-")[0].split(":")[1].split("[")[0].strip()
+        )
+        param_details = option_details(self.cmd_info, parse_option)
         await interaction.response.edit_message(content=param_details, view=None)
 
 
@@ -192,25 +205,8 @@ class SelectOption(Select):
         )
 
     async def callback(self, interaction):
-        # self.values[0] to get the label, format label to remove #: and []
-        # search slash commands for details?
-        # **Option:** opt (i.e. input)
-        # **Description:** desc
-        # **Type:** opt_type
-        # **Command:** param_parent (i.e. `help`)
-        # **Required:** req
-        parse_selection = self.values[0].split(":")[1].split("[")
-        opt = parse_selection[0].strip()
-        opt_type = f"[{parse_selection[1]}"
-        param = self.cmd_info.get_parameter(opt)
-        req = param.required
-        param_parent = param.command.name
-        desc = ""
-        fmt_pdesc = param.description.split("]")[1].strip()
-        if param.name != fmt_pdesc:
-            desc = fmt_pdesc
-
-        param_details = f"**Option**: {opt}\n**Description**: {desc}\n**Type**: {opt_type}\n**Command**: `{param_parent}`\n**Required**: {req}"
+        parse_option = self.values[0].split(":")[1].split("[")[0].strip()
+        param_details = option_details(self.cmd_info, parse_option)
         await interaction.response.edit_message(content=param_details, view=None)
 
 
@@ -222,8 +218,6 @@ class General(commands.Cog):
     async def on_ready(self):
         print(f"* Cog: General loaded.")
 
-    # /help command subcommand
-    # /help command option
     # /help category
     # check if category - output category info (how to retrieve category/module)
     # check if command - output command info (how to retrieve command specific info)
@@ -242,6 +236,9 @@ class General(commands.Cog):
         # self.bot.help_dict.values() for all commands
         slash_commands = [
             command for sub_list in self.bot.help_dict.values() for command in sub_list
+        ]
+        slash_categories = [
+            category for sub_list in self.bot.help_dict.keys() for category in sub_list
         ]
 
         if input is None:
@@ -273,7 +270,41 @@ class General(commands.Cog):
             # \u2800 is an invisible unicode character, can also maybe use \u200b
             embedMsg.add_field(name="\u2800", value=f"{trailing_text}", inline=False)
             await interaction.response.send_message(embed=embedMsg)
-        elif input in slash_commands:
+            return None  # exit
+
+        input_params = input.split(" ")
+        input_length = len(input_params)
+        is_cmd = input_params[0] in slash_commands
+        is_categ = input_params[0] in slash_categories
+
+        if not is_cmd and not is_categ:
+            await interaction.response.send_message(
+                content="Failed to find relevant help for input"
+            )
+            return None  # exit
+
+        # if a command and category share a name then we'll need to address it
+        if is_cmd and is_categ:
+            await interaction.response.send_message(
+                content="**ALERT**: There is a shared name between a category and command!!!"
+            )
+            return None  # exit
+
+        # /help command option || /help command subcommand
+        if input_length > 1 and is_cmd:
+            input_cmd = input_params[0]
+            input_add = input_params[1]
+
+            cmd_info = self.bot.tree.get_command(input_cmd)
+            param = cmd_info.get_parameter(input_add)  # returns None if not found
+
+            if param != None:
+                option_help = option_details(cmd_info, param.name)
+                await interaction.response.send_message(content=option_help)
+            # if subcommand....wip
+
+        # /help command
+        elif is_cmd:
             cmd_info = self.bot.tree.get_command(input)
             desc = cmd_info.description
             params = cmd_info.parameters
@@ -325,6 +356,10 @@ class General(commands.Cog):
                     SelectOption(cmd_info=cmd_info, option_data=option_txt[0])
                 )
                 await interaction.response.send_message(content=help_cmd_msg, view=view)
+        # /help category
+        elif is_categ:
+            # reuse nav view
+            pass
 
 
 async def setup(bot):
