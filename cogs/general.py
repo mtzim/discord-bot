@@ -5,6 +5,10 @@ from discord import ButtonStyle
 from discord import app_commands
 from typing import Dict, List, Optional
 
+# TODO: for /help category consider deleting or removing view before passing it off to a new view,
+# there might be potential memory leak(?) over time as the views pile up from not being discarded
+# This might also speed up the view changes too if they look like they're hanging
+
 
 def option_details(command_info: app_commands.Command, option: str) -> str:
     """
@@ -27,27 +31,95 @@ def option_details(command_info: app_commands.Command, option: str) -> str:
     return f"**Option**: {option}\n**Description**: {description}\n**Type**: {option_type}\n**Command**: `{command}`\n**Required**: {required}"
 
 
+async def command_view_helper(
+    cmd_info: app_commands.Command,
+    interaction: discord.Interaction,
+    from_categ_view: Optional[bool] = None,
+):
+    desc = cmd_info.description
+    params = cmd_info.parameters
+
+    help_cmd_msg = (
+        f"**Command**: `{cmd_info.name}`\n**Description**: {desc}\n\n**Options**:\n"
+    )
+
+    # store and retrieve type/desc data in extras for a command instead?
+    # find description from param, format description to remove type, compare to param name, if same do nothing
+    count = 0
+    # option_txt = ""
+    page_content = []
+    for param in params:
+        count += 1
+        split_desc = param.description.split("]")
+        # print(f"{str(param.type).split('.')[1].upper()}")
+        # option_txt = f"{option_txt}{count} : {param.name}{split_desc[0]}] -{split_desc[1]}\n"
+        if param.name != split_desc[1].strip():
+            page_content.append(
+                f"{count} : {param.name}{split_desc[0]}] -{split_desc[1]}"
+            )
+        else:
+            page_content.append(f"{count} : {param.name}{split_desc[0]}]")
+    option_txt = [
+        "\n".join(page_content[i : i + 10]) for i in range(0, len(page_content), 10)
+    ]
+
+    pages = len(option_txt)
+    # When only 1 option - green choose button
+    # when more than 1 option, select menu that is updated by buttons that sync with pages - split up option_txt
+    if pages == 1 and count == 1:
+        view = SingleButtonView(cmd_info=cmd_info, option_data=option_txt[0])
+        help_cmd_msg = f"{help_cmd_msg}```{option_txt[0]}```"
+        if from_categ_view:
+            await interaction.response.edit_message(content=help_cmd_msg, view=view)
+        else:
+            await interaction.response.send_message(content=help_cmd_msg, view=view)
+    elif pages == 1 and count <= 10:
+        view = View()
+        view.add_item(SelectOption(cmd_info=cmd_info, option_data=option_txt[0]))
+        help_cmd_msg = f"{help_cmd_msg}```{option_txt[0]}```"
+        if from_categ_view:
+            await interaction.response.edit_message(content=help_cmd_msg, view=view)
+        else:
+            await interaction.response.send_message(content=help_cmd_msg, view=view)
+    else:
+        curr_page = 1
+        help_cmd_msg = (
+            f"{help_cmd_msg}```Page {curr_page}/{pages}\n{option_txt[curr_page-1]}```"
+        )
+        view = NavigationView(cmd_info=cmd_info, option_data=option_txt)
+        view.add_item(SelectOption(cmd_info=cmd_info, option_data=option_txt[0]))
+        if from_categ_view:
+            await interaction.response.edit_message(content=help_cmd_msg, view=view)
+        else:
+            await interaction.response.send_message(content=help_cmd_msg, view=view)
+
+
 class NavigationView(View):
     def __init__(
         self,
         cmd_info: Optional[app_commands.Command] = None,
         option_data: Optional[List[str]] = None,
+        category: Optional[str] = None,
+        is_categ: Optional[bool] = None,
+        bot: Optional[commands.Bot] = None,
     ):
         super().__init__()
         self.option_data = option_data
         self.cmd_info = cmd_info
+        self.category = category
+        self.is_categ = is_categ
+        self.bot = bot
 
-        desc = self.cmd_info.description
-        params = self.cmd_info.parameters
-        self.help_cmd_intro = (
-            f"**Command**: `{cmd_info.name}`\n**Description**: {desc}\n\n**Options**:\n"
-        )
+        if self.cmd_info != None:
+            desc = self.cmd_info.description
+            self.help_cmd_intro = f"**Command**: `{self.cmd_info.name}`\n**Description**: {desc}\n\n**Options**:\n"
+
+        if self.category != None:
+            self.help_cmd_intro = f"{self.category}\n"
 
         if self.option_data != None:
             self.pages = len(self.option_data)
             self.curr_page = 1
-
-        # self.help_cmd_msg = f"{self.help_cmd_intro}```Page {self.curr_page}/{self.pages}\n{self.option_data[self.curr_page-1]}```"
 
     @discord.ui.button(emoji="⏮️", disabled=True, custom_id="start")
     async def btn_start_callback(
@@ -66,11 +138,21 @@ class NavigationView(View):
 
         select = [x for x in self.children if x.custom_id == "select_options"][0]
         self.remove_item(select)
-        self.add_item(
-            SelectOption(
-                cmd_info=self.cmd_info, option_data=self.option_data[self.curr_page - 1]
+        if self.is_categ:
+            self.add_item(
+                SelectOption(
+                    option_data=self.option_data[self.curr_page - 1],
+                    is_categ=self.is_categ,
+                    bot=self.bot,
+                )
             )
-        )
+        else:
+            self.add_item(
+                SelectOption(
+                    cmd_info=self.cmd_info,
+                    option_data=self.option_data[self.curr_page - 1],
+                )
+            )
 
         help_cmd_msg = f"{self.help_cmd_intro}```Page {self.curr_page}/{self.pages}\n{self.option_data[self.curr_page-1]}```"
         await interaction.response.edit_message(content=help_cmd_msg, view=self)
@@ -88,11 +170,21 @@ class NavigationView(View):
 
         select = [x for x in self.children if x.custom_id == "select_options"][0]
         self.remove_item(select)
-        self.add_item(
-            SelectOption(
-                cmd_info=self.cmd_info, option_data=self.option_data[self.curr_page - 1]
+        if self.is_categ:
+            self.add_item(
+                SelectOption(
+                    option_data=self.option_data[self.curr_page - 1],
+                    is_categ=self.is_categ,
+                    bot=self.bot,
+                )
             )
-        )
+        else:
+            self.add_item(
+                SelectOption(
+                    cmd_info=self.cmd_info,
+                    option_data=self.option_data[self.curr_page - 1],
+                )
+            )
 
         help_cmd_msg = f"{self.help_cmd_intro}```Page {self.curr_page}/{self.pages}\n{self.option_data[self.curr_page-1]}```"
         await interaction.response.edit_message(content=help_cmd_msg, view=self)
@@ -116,11 +208,21 @@ class NavigationView(View):
 
         select = [x for x in self.children if x.custom_id == "select_options"][0]
         self.remove_item(select)
-        self.add_item(
-            SelectOption(
-                cmd_info=self.cmd_info, option_data=self.option_data[self.curr_page - 1]
+        if self.is_categ:
+            self.add_item(
+                SelectOption(
+                    option_data=self.option_data[self.curr_page - 1],
+                    is_categ=self.is_categ,
+                    bot=self.bot,
+                )
             )
-        )
+        else:
+            self.add_item(
+                SelectOption(
+                    cmd_info=self.cmd_info,
+                    option_data=self.option_data[self.curr_page - 1],
+                )
+            )
 
         help_cmd_msg = f"{self.help_cmd_intro}```Page {self.curr_page}/{self.pages}\n{self.option_data[self.curr_page-1]}```"
         await interaction.response.edit_message(content=help_cmd_msg, view=self)
@@ -140,11 +242,21 @@ class NavigationView(View):
 
         select = [x for x in self.children if x.custom_id == "select_options"][0]
         self.remove_item(select)
-        self.add_item(
-            SelectOption(
-                cmd_info=self.cmd_info, option_data=self.option_data[self.curr_page - 1]
+        if self.is_categ:
+            self.add_item(
+                SelectOption(
+                    option_data=self.option_data[self.curr_page - 1],
+                    is_categ=self.is_categ,
+                    bot=self.bot,
+                )
             )
-        )
+        else:
+            self.add_item(
+                SelectOption(
+                    cmd_info=self.cmd_info,
+                    option_data=self.option_data[self.curr_page - 1],
+                )
+            )
 
         help_cmd_msg = f"{self.help_cmd_intro}```Page {self.curr_page}/{self.pages}\n{self.option_data[self.curr_page-1]}```"
         await interaction.response.edit_message(content=help_cmd_msg, view=self)
@@ -155,25 +267,35 @@ class NavigationView(View):
         await interaction.response.edit_message(content=msg, view=None)
 
 
-class SingleView(View):
+class SingleButtonView(View):
     def __init__(
         self,
         cmd_info: Optional[app_commands.Command] = None,
         option_data: Optional[str] = None,
+        is_categ: Optional[bool] = None,
+        bot: Optional[commands.Bot] = None,
     ):
         self.cmd_info = cmd_info
         self.option_data = option_data
+        self.is_categ = is_categ
+        self.bot = bot
         super().__init__()
 
     @discord.ui.button(style=ButtonStyle.success, label="Choose", custom_id="choose")
     async def btn_choose_callback(
         self, interaction: discord.Interaction, button: Button
     ):
-        parse_option = (
-            self.option_data.split("-")[0].split(":")[1].split("[")[0].strip()
-        )
-        param_details = option_details(self.cmd_info, parse_option)
-        await interaction.response.edit_message(content=param_details, view=None)
+        if self.cmd_info != None:
+            parse_option = (
+                self.option_data.split("-")[0].split(":")[1].split("[")[0].strip()
+            )
+            param_details = option_details(self.cmd_info, parse_option)
+            await interaction.response.edit_message(content=param_details, view=None)
+        elif self.is_categ:
+            # Because this is a category, option_data will be our single command
+            parse_command = self.option_data.split("-")[0].split(":")[1].strip()
+            command = self.bot.tree.get_command(parse_command)
+            await command_view_helper(command, interaction, from_categ_view=True)
 
 
 class SelectOption(Select):
@@ -181,10 +303,15 @@ class SelectOption(Select):
         self,
         cmd_info: Optional[app_commands.Command] = None,
         option_data: Optional[str] = None,
+        is_categ: Optional[bool] = None,
+        bot: Optional[commands.Bot] = None,
     ):
 
         self.option_data = option_data
         self.cmd_info = cmd_info
+        self.is_categ = is_categ
+        self.bot = bot
+
         lines = self.option_data.split("\n")
         self.discord_select = []
         for label in lines:
@@ -205,9 +332,14 @@ class SelectOption(Select):
         )
 
     async def callback(self, interaction):
-        parse_option = self.values[0].split(":")[1].split("[")[0].strip()
-        param_details = option_details(self.cmd_info, parse_option)
-        await interaction.response.edit_message(content=param_details, view=None)
+        if self.cmd_info != None:
+            parse_option = self.values[0].split(":")[1].split("[")[0].strip()
+            param_details = option_details(self.cmd_info, parse_option)
+            await interaction.response.edit_message(content=param_details, view=None)
+        elif self.is_categ:
+            parse_command = self.values[0].split(":")[1].strip()
+            command = self.bot.tree.get_command(parse_command)
+            await command_view_helper(command, interaction, from_categ_view=True)
 
 
 class General(commands.Cog):
@@ -235,11 +367,12 @@ class General(commands.Cog):
         # self.bot.help_dict.keys() for all categories
         # self.bot.help_dict.values() for all commands
         slash_commands = [
-            command for sub_list in self.bot.help_dict.values() for command in sub_list
+            command.lower()
+            for sub_list in self.bot.help_dict.values()
+            for command in sub_list
         ]
-        slash_categories = [
-            category for sub_list in self.bot.help_dict.keys() for category in sub_list
-        ]
+
+        slash_categories = [category.lower() for category in self.bot.help_dict.keys()]
 
         if input is None:
             # help_dict is {'Default': ['hello', 'help']}
@@ -264,8 +397,9 @@ class General(commands.Cog):
             for key in sorted_help.keys():
                 for command in sorted_help[key]:
                     command_list.append(f"`{command}`")
-                value = ", ".join(command_list)
-                embedMsg.add_field(name=key, value=value, inline=False)
+                sorted_command_list = sorted(command_list)
+                value = ", ".join(sorted_command_list)
+                embedMsg.add_field(name=key.upper(), value=value, inline=False)
                 command_list.clear()
             # \u2800 is an invisible unicode character, can also maybe use \u200b
             embedMsg.add_field(name="\u2800", value=f"{trailing_text}", inline=False)
@@ -274,8 +408,8 @@ class General(commands.Cog):
 
         input_params = input.split(" ")
         input_length = len(input_params)
-        is_cmd = input_params[0] in slash_commands
-        is_categ = input_params[0] in slash_categories
+        is_cmd = input_params[0].lower() in slash_commands
+        is_categ = input_params[0].lower() in slash_categories
 
         if not is_cmd and not is_categ:
             await interaction.response.send_message(
@@ -306,60 +440,66 @@ class General(commands.Cog):
         # /help command
         elif is_cmd:
             cmd_info = self.bot.tree.get_command(input)
-            desc = cmd_info.description
-            params = cmd_info.parameters
+            await command_view_helper(cmd_info, interaction)
+        # /help category
+        elif is_categ:
+            command_list = []
+            for key in self.bot.help_dict.keys():
+                if key.lower() == input_params[0].lower():
+                    command_list = sorted(self.bot.help_dict[key])
+                    break
+            help_cmd_msg = f"{input_params[0].capitalize()}\n"
 
-            help_cmd_msg = (
-                f"**Command**: `{input}`\n**Description**: {desc}\n\n**Options**:\n"
-            )
-
-            # store and retrieve type/desc data in extras for a command instead?
-            # find description from param, format description to remove type, compare to param name, if same do nothing
             count = 0
-            # option_txt = ""
             page_content = []
-            for param in params:
+            for command in command_list:
                 count += 1
-                split_desc = param.description.split("]")
-                # print(f"{str(param.type).split('.')[1].upper()}")
-                # option_txt = f"{option_txt}{count} : {param.name}{split_desc[0]}] -{split_desc[1]}\n"
-                if param.name != split_desc[1].strip():
-                    page_content.append(
-                        f"{count} : {param.name}{split_desc[0]}] -{split_desc[1]}"
-                    )
+                cmd_info = self.bot.tree.get_command(command)
+                cmd_desc = cmd_info.description
+
+                # description exists
+                if len(cmd_desc) > 0:
+                    page_content.append(f"{count} : {cmd_info.name} - {cmd_desc}")
                 else:
-                    page_content.append(f"{count} : {param.name}{split_desc[0]}]")
+                    page_content.append(f"{count} : {cmd_info.name}")
             option_txt = [
                 "\n".join(page_content[i : i + 10])
                 for i in range(0, len(page_content), 10)
             ]
 
             pages = len(option_txt)
-            # When only 1 option - green choose button
-            # when more than 1 option, select menu that is updated by buttons that sync with pages - split up option_txt
+
+            # modify to work with category, encapsulate cmd logic, selectoption.values[0] pass ass cmd
+            # view won't know cmd_info so pass reference to bot instead, update cmd_helper func
             if pages == 1 and count == 1:
-                view = SingleView(cmd_info=cmd_info, option_data=option_txt[0])
+                view = SingleButtonView(
+                    option_data=option_txt[0], is_categ=is_categ, bot=self.bot
+                )
                 help_cmd_msg = f"{help_cmd_msg}```{option_txt[0]}```"
                 await interaction.response.send_message(content=help_cmd_msg, view=view)
             elif pages == 1 and count <= 10:
                 view = View()
                 view.add_item(
-                    SelectOption(cmd_info=cmd_info, option_data=option_txt[0])
+                    SelectOption(
+                        option_data=option_txt[0], is_categ=is_categ, bot=self.bot
+                    )
                 )
                 help_cmd_msg = f"{help_cmd_msg}```{option_txt[0]}```"
                 await interaction.response.send_message(content=help_cmd_msg, view=view)
             else:
                 curr_page = 1
                 help_cmd_msg = f"{help_cmd_msg}```Page {curr_page}/{pages}\n{option_txt[curr_page-1]}```"
-                view = NavigationView(cmd_info=cmd_info, option_data=option_txt)
+                view = NavigationView(
+                    option_data=option_txt, is_categ=is_categ, bot=self.bot
+                )
                 view.add_item(
-                    SelectOption(cmd_info=cmd_info, option_data=option_txt[0])
+                    SelectOption(
+                        option_data=option_txt[0], is_categ=is_categ, bot=self.bot
+                    )
                 )
                 await interaction.response.send_message(content=help_cmd_msg, view=view)
-        # /help category
-        elif is_categ:
-            # reuse nav view
-            pass
+            # reuse nav view and is_cmd code
+            # selecting a command will lead to nav view with the command selected
 
 
 async def setup(bot):
