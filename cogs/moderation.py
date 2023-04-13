@@ -37,19 +37,6 @@ class Moderation(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
 
-    @app_commands.command(name="cogmod", extras={"module": "Moderation"})
-    async def my_command(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_message("Hello from the moderation cog!")
-
-    @app_commands.command(
-        name="customban", description="Bans a member", extras={"module": "Moderation"}
-    )
-    @app_commands.describe(member="the member to ban")
-    async def ban(
-        self, interaction: discord.Interaction, member: Optional[discord.Member]
-    ):
-        await interaction.response.send_message(f"Banned {member}")
-
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"* Cog: Moderation loaded.")

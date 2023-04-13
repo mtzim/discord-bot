@@ -108,28 +108,14 @@ def load_commands(bot):
     async def shutdown(ctx: commands.Context):
         await ctx.bot.close()
 
-    @bot.command()
-    async def ping(ctx: commands.Context):
-        await ctx.reply(f"Pong! `{round(ctx.bot.latency*1000)}ms`")
-
-    @bot.command(help=f"Usage: `?prefix <NEW PREFIX>`")
-    @commands.has_guild_permissions(manage_guild=True)
-    async def prefix(ctx: commands.Context, new_prefix: str):
-        db = SQL()
-        if not db.set_prefix(ctx.guild.id, new_prefix):
-            await ctx.reply(f"Unable to change prefix.")
-        else:
-            await ctx.reply(f"Prefix successfully changed to `{new_prefix}`")
-        db.close()
-
-    @prefix.error
-    async def prefix_err(ctx, err):
-        if type(err) == commands.errors.MissingRequiredArgument:
-            await ctx.reply(f"Missing required argument `<NEW PREFIX>`")
-
-    @bot.tree.command(name="hello", extras={"module": "Default"})
-    async def my_command(interaction: discord.Interaction) -> None:
-        await interaction.response.send_message("Hello from my command!")
+    @bot.tree.command(
+        description=f"Check if the bot is online",
+        extras={"module": "General"},
+    )
+    async def ping(interaction: discord.Interaction) -> None:
+        await interaction.response.send_message(
+            f"Pong! `{round(interaction.client.latency*1000)}ms`"
+        )
 
     # Sync slash commands globally or to specific guilds
     @bot.command(hidden=True)
