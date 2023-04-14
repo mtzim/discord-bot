@@ -233,7 +233,7 @@ class Moderation(commands.Cog):
 
             msgs_per_author = {}
             if not silent:
-                msg_to_edit = await interaction.response.send_message(
+                await interaction.response.send_message(
                     f"Fetching messages, it may take awhile"
                 )
                 skip_first_msg = True
