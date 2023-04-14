@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from typing import List, Optional
 from datetime import date, datetime
+from discord import app_commands
 
 
 class Utility(commands.Cog):
@@ -12,8 +13,14 @@ class Utility(commands.Cog):
     async def on_ready(self):
         print(f"* Cog: Utility loaded.")
 
-    @commands.command(help="Usage: `?avatar <USER>`")
-    async def avatar(self, ctx: commands.Context, user):
+    @app_commands.command(
+        description=f"Display avatar of a user",
+        extras={"module": "Utility"},
+    )
+    @app_commands.describe(user="[USER] user")
+    async def avatar(
+        self, interaction: discord.Interaction, user: Optional[discord.User] = None
+    ):
         """
         Displays the full resolution of the user's avatar
 
@@ -21,36 +28,47 @@ class Utility(commands.Cog):
         instead if you want the user's global avatar even if the user has set
         a guild avatar.
         """
-        guild_member = discord.utils.get(ctx.guild.members, mention=user)
+        if not user:
+            user = interaction.user
         embed = discord.Embed()
-        embed.set_image(url=guild_member.display_avatar.url)
-        embed.title = f"{guild_member}"
-        embed.description = f"[Display Avatar]({guild_member.display_avatar.url})"
+        embed.set_image(url=user.display_avatar.url)
+        embed.title = f"{user}"
+        embed.description = f"[Display Avatar]({user.display_avatar.url})"
         # embed.set_footer(text=f"?avatar invoked by {ctx.author}")
         # await ctx.message.delete()
-        await ctx.reply(allowed_mentions=discord.AllowedMentions.none(), embed=embed)
-
-    @commands.command(help="Usage: `?userinfo <USER>`")
-    async def userinfo(self, ctx: commands.Context, user):
-        """Displays various information about a user"""
-        guild_member = discord.utils.get(ctx.guild.members, mention=user)
-        embed = discord.Embed(color=discord.Color.blue())
-        embed.set_author(
-            name=f"{guild_member}", icon_url=f"{guild_member.display_avatar.url}"
+        await interaction.response.send_message(
+            allowed_mentions=discord.AllowedMentions.none(), embed=embed
         )
-        embed.set_thumbnail(url=f"{guild_member.display_avatar.url}")
 
-        role_text = self.list_roles(guild_member.roles)
-        joined_at_text = self.format_date(guild_member.joined_at)
-        created_at_text = self.format_date(guild_member.created_at)
+    @app_commands.command(
+        description=f"Display info about a user",
+        extras={"module": "Utility"},
+    )
+    @app_commands.describe(user="[USER] user to show")
+    async def userinfo(
+        self, interaction: discord.Interaction, user: Optional[discord.User] = None
+    ):
+        """Displays various information about a user"""
 
-        embed.add_field(name=f"ID", value=guild_member.id, inline=False)
-        embed.add_field(name=f"Mention", value=guild_member.mention, inline=False)
-        embed.add_field(name=f"Status", value=guild_member.status, inline=False)
+        if not user:
+            user = interaction.user
+        embed = discord.Embed(color=discord.Color.blue())
+        embed.set_author(name=f"{user}", icon_url=f"{user.display_avatar.url}")
+        embed.set_thumbnail(url=f"{user.display_avatar.url}")
+
+        role_text = self.list_roles(user.roles)
+        joined_at_text = self.format_date(user.joined_at)
+        created_at_text = self.format_date(user.created_at)
+
+        embed.add_field(name=f"ID", value=user.id, inline=False)
+        embed.add_field(name=f"Mention", value=user.mention, inline=False)
+        embed.add_field(name=f"Status", value=user.status, inline=False)
         embed.add_field(name=f"Roles", value=role_text, inline=False)
         embed.add_field(name=f"Joined", value=joined_at_text, inline=False)
         embed.add_field(name=f"Created", value=created_at_text, inline=False)
-        await ctx.reply(allowed_mentions=discord.AllowedMentions.none(), embed=embed)
+        await interaction.response.send_message(
+            allowed_mentions=discord.AllowedMentions.none(), embed=embed
+        )
 
     # Excludes @everyone role at index 0
     def list_roles(self, roles: List[discord.Role]) -> str:
