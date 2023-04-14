@@ -610,6 +610,7 @@ class General(commands.Cog):
     # app_commands.checks.has_role for guild permissions?
     @prefix_group.command(name="set", description="Set Prefix")
     @app_commands.describe(prefix="[STRING] New Prefix")
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def set_prefix(self, interaction: discord.Interaction, prefix: str):
         db = SQL()
         if not db.set_prefix(interaction.guild_id, prefix):
@@ -621,6 +622,7 @@ class General(commands.Cog):
         db.close()
 
     @prefix_group.command(name="view", description="View Prefix")
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def view_prefix(self, interaction: discord.Interaction):
         db = SQL()
         prefix = db.get_prefix(interaction.guild_id)
