@@ -15,10 +15,17 @@ def option_details(command_info: app_commands.Command, option: str) -> str:
     """
     Format and return details about a command's parameter.
 
-    :param command_info: app_commands.Command, the command that the parameter belongs to
-    :param option: str, the command's parameter that needs parsing
+    Parameters
+    ----------
+    command_info : app_commands.Command
+        The command that the parameter belongs to
+    option: str
+        The command's parameter that needs parsing
 
-    :return: str, the formatted details that belong to a command's parameter
+    Returns
+    -------
+    str
+        The formatted details that belong to a command's parameter
     """
     in_group = command_info.parent
     param = command_info.get_parameter(option)
@@ -41,6 +48,20 @@ async def group_view_helper(
     interaction: discord.Interaction,
     bot: commands.Bot,
 ):
+    """
+    A group view helper that helps with subcommand handling
+
+    ...
+
+    Parameters
+    ----------
+    cmd_info : app_commands.Group
+        A parent command
+    interaction : discord.Interaction
+        The interaction caused by a user performing a slash command
+    bot : commands.Bot
+        A custom Discord Bot
+    """
     # subcommands instead of options
     # picking a subcommand here will load its options
     # just like category which also lists commands
@@ -102,6 +123,20 @@ async def command_view_helper(
     interaction: discord.Interaction,
     from_categ_view: Optional[bool] = None,
 ):
+    """
+    A command view helper that helps with command and parameter handling
+
+    ...
+
+    Parameters
+    ----------
+    cmd_info : app_commands.Command
+        A slash command
+    interaction : discord.Interaction
+        The interaction caused by a user performing a slash command
+    from_categ_view : bool, optional, default=None
+        Whether or not this helper is being called from a view or UI item that was handling a category
+    """
     desc = cmd_info.description
     params = cmd_info.parameters
 
@@ -174,6 +209,38 @@ async def command_view_helper(
 
 
 class NavigationView(View):
+    """
+    A UI view containing a navigation menu using Buttons from the Discord Bot UI Kit.
+
+    ...
+
+    Attributes
+    ----------
+    cmd_info : app_commands.Command, optional
+        A slash command
+    option_data : str, optional
+        A list of options to create pages to display from
+    category : str, optional
+        A category name
+    is_categ : bool, optional
+        Whether or not the options are a list of commands belonging to a category
+    bot : commands.Bot, optional
+        The discord bot
+
+    Methods
+    -------
+    btn_start_callback(interaction, button)
+        The callback associated with the Button UI item to return to the first page
+    btn_back_callback(interaction, button)
+        The callback associated with the Button UI item to go back a page
+    btn_forward_callback(interaction, button)
+        The callback associated with the Button UI item to go forward a page
+    btn_end_callback(interaction, button)
+        The callback associated with the Button UI item to go to the last page
+    btn_stop_callback(interaction, button)
+        The callback associated with the Button UI item to exit the navigation menu
+    """
+
     def __init__(
         self,
         cmd_info: Optional[app_commands.Command] = None,
@@ -347,6 +414,28 @@ class NavigationView(View):
 
 
 class SingleButtonView(View):
+    """
+    A UI view containing a single button from the Discord Bot UI Kit.
+
+    ...
+
+    Attributes
+    ----------
+    cmd_info : app_commands.Command, optional
+        A slash command
+    option_data : str, optional
+        A single option to choose
+    is_categ : bool, optional
+        Whether or not the option is a command belonging to a category
+    bot : commands.Bot, optional
+        The discord bot
+
+    Methods
+    -------
+    btn_choose_callback(interaction, button)
+        The callback associated with the Button UI item
+    """
+
     def __init__(
         self,
         cmd_info: Optional[app_commands.Command] = None,
@@ -378,6 +467,32 @@ class SingleButtonView(View):
 
 
 class SelectOption(Select):
+    """
+    A UI select menu with a list of custom options.
+
+    ...
+
+    Attributes
+    ----------
+    cmd_info : app_commands.Command, optional
+        A slash command
+    option_data : str, optional
+        A list of options to select from
+    is_categ : bool, optional
+        Whether or not the options are a list of commands belonging to a category
+    is_group : bool, optional
+        Whether or not the options are a list of subcommands belonging to a group
+    group_info : app_commands.Group, optional
+        A parent command
+    bot : commands.Bot, optional
+        The discord bot
+
+    Methods
+    -------
+    callback(interaction)
+        The callback associated with the Select UI item
+    """
+
     def __init__(
         self,
         cmd_info: Optional[app_commands.Command] = None,
@@ -434,6 +549,26 @@ class SelectOption(Select):
 
 
 class General(commands.Cog):
+    """
+    A Cog that contains general commands.
+
+    ...
+
+    Attributes
+    ----------
+    bot : commands.Bot
+        The discord bot
+
+    Methods
+    -------
+    slash_help(interaction,input)
+        Learn about commands and supported features
+    set_prefix(interaction,prefix)
+        Set Prefix
+    view_prefix(interaction)
+        View Prefix
+    """
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -455,6 +590,18 @@ class General(commands.Cog):
     async def slash_help(
         self, interaction: discord.Interaction, input: Optional[str]
     ) -> None:
+        """
+        Learn about commands and supported features
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        input : str, optional
+            A command, subcommand, option, or category that you want to view more details about
+        """
         # self.bot.help_dict.keys() for all categories
         # self.bot.help_dict.values() for all commands
         slash_commands = [
@@ -612,6 +759,18 @@ class General(commands.Cog):
     @app_commands.describe(prefix="[STRING] New Prefix")
     @app_commands.checks.has_permissions(manage_guild=True)
     async def set_prefix(self, interaction: discord.Interaction, prefix: str):
+        """
+        Set Prefix
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        prefix : str
+            A guild's new prefix
+        """
         db = SQL()
         if not db.set_prefix(interaction.guild_id, prefix):
             await interaction.response.send_message(f"Unable to change prefix.")
@@ -624,6 +783,16 @@ class General(commands.Cog):
     @prefix_group.command(name="view", description="View Prefix")
     @app_commands.checks.has_permissions(manage_guild=True)
     async def view_prefix(self, interaction: discord.Interaction):
+        """
+        View Prefix
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        """
         db = SQL()
         prefix = db.get_prefix(interaction.guild_id)
         if not prefix:

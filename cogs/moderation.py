@@ -6,6 +6,24 @@ import re
 
 
 class Moderation(commands.Cog):
+    """
+    A Cog that contains moderation commands.
+
+    ...
+
+    Attributes
+    ----------
+    bot : commands.Bot
+        The discord bot
+
+    Methods
+    -------
+    prune(interaction,amount,attachments,bots,embeds,filter,invites,pinned,reactions,silent,system,until,user)
+        Message Pruning
+    prune_helper(interaction,amount,attachments,bots,embeds,filter,invites,pinned,reactions,silent,system,until,user)
+        A helper that handles message pruning logic based on the parameters that were supplied
+    """
+
     def __init__(self, bot) -> None:
         self.bot = bot
 
@@ -53,6 +71,40 @@ class Moderation(commands.Cog):
         until: Optional[str] = None,
         user: Optional[discord.User] = None,
     ):
+        """
+        Message Pruning
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        amount: int, optional, default=None
+            Prunes messages by the specified amount
+        attachments: bool, optional, default=False
+            Only prunes messages containing attachments
+        bots: bool, optional, default=False
+            Prunes all messages created by any bot
+        embeds: bool, optional, default=False
+            Only prunes messages containing embeds
+        filter: str, optional, default=None
+            Only prunes messages that contain the specified string
+        invites: bool, optional, default=False
+            Only prunes messages containing Discord invites
+        pinned: bool, optional, default=False
+            Also prunes pinned messages (they are not pruned by default)
+        reactions: bool, optional, default=False
+            Only removes the reactions from the targeted messages instead of deleting them
+        silent: bool, optional, default=False
+            Silent. Disables printing the prune results at the end
+        system: bool, optional, default=False
+            Only removes system messages
+        until: str, optional, default=None
+            Prunes messages until the given message is reached
+        user: discord.User, optional, default=None
+            Prunes all messages by the specified user
+        """
         # Mandatory option is missing
         if not until and not amount:
             await interaction.response.send_message(
@@ -92,6 +144,40 @@ class Moderation(commands.Cog):
         until: str,
         user: discord.User,
     ):
+        """
+        A helper that handles message pruning logic based on the parameters that were supplied
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        amount: int, optional, default=None
+            Prunes messages by the specified amount
+        attachments: bool, optional, default=False
+            Only prunes messages containing attachments
+        bots: bool, optional, default=False
+            Prunes all messages created by any bot
+        embeds: bool, optional, default=False
+            Only prunes messages containing embeds
+        filter: str, optional, default=None
+            Only prunes messages that contain the specified string
+        invites: bool, optional, default=False
+            Only prunes messages containing Discord invites
+        pinned: bool, optional, default=False
+            Also prunes pinned messages (they are not pruned by default)
+        reactions: bool, optional, default=False
+            Only removes the reactions from the targeted messages instead of deleting them
+        silent: bool, optional, default=False
+            Silent. Disables printing the prune results at the end
+        system: bool, optional, default=False
+            Only removes system messages
+        until: str, optional, default=None
+            Prunes messages until the given message is reached
+        user: discord.User, optional, default=None
+            Prunes all messages by the specified user
+        """
         # find the substr in the str
         def contains_str(filter: str, content: str) -> bool:
             # if filter found in content, return True
