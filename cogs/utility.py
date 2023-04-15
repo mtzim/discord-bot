@@ -6,6 +6,28 @@ from discord import app_commands
 
 
 class Utility(commands.Cog):
+    """
+    A Cog that contains utility commands.
+
+    ...
+
+    Attributes
+    ----------
+    bot : commands.Bot
+        The discord bot
+
+    Methods
+    -------
+    avatar(interaction,user)
+        Displays the full resolution of a user's avatar
+    userinfo(interaction,user)
+        Displays the info about a user
+    list_roles(roles)
+        Creates a string from a list of the roles a user has by the roles' mention
+    format_date(date)
+        Formats the date to appear as Year/Month/Day
+    """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -48,7 +70,9 @@ class Utility(commands.Cog):
     async def userinfo(
         self, interaction: discord.Interaction, user: Optional[discord.User] = None
     ):
-        """Displays various information about a user"""
+        """
+        Displays the info about a user
+        """
 
         if not user:
             user = interaction.user
@@ -72,6 +96,21 @@ class Utility(commands.Cog):
 
     # Excludes @everyone role at index 0
     def list_roles(self, roles: List[discord.Role]) -> str:
+        """
+        Creates a string from a list of the roles a user has by the roles' mention
+
+        ...
+
+        Parameters
+        ----------
+        roles : List[discord.Role]
+            A list of roles that a user has
+
+        Returns
+        -------
+        LiteralString
+            A string containing roles by their mention
+        """
         role_list = []
         for role in roles[1:]:
             name = f"{role.mention}"
@@ -81,6 +120,21 @@ class Utility(commands.Cog):
 
     # Formats date to YYYY/MM/DD
     def format_date(self, date: datetime):
+        """
+        Formats the date to appear as Year/Month/Day
+
+        ...
+
+        Parameters
+        ----------
+        date : datetime
+            A date that needs formatting
+
+        Returns
+        -------
+        str
+            A string containing the formatted date
+        """
         return date.strftime("%Y/%m/%d")
 
 

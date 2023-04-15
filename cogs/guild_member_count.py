@@ -6,6 +6,28 @@ from discord import app_commands
 
 # Channel edit rate limit twice per 10 minutes
 class GuildMemberCount(commands.Cog):
+    """
+    A Cog containing commands and a task to set a guild channel to update periodically to display a guild's total member count.
+
+    ...
+
+    Attributes
+    ----------
+    bot : commands.Bot
+        The discord bot
+
+    Methods
+    -------
+    update_channel_member_count(guild)
+        Formats the timezone to display
+    set_member_count_channel_id(interaction,channel)
+        Set a guild channel to display the guild's member count
+    get_member_count_channel(interaction)
+        Show the channel that is currently set to display the guild's member count
+    update_member_count_task()
+        Background task that updates a guild channel to reflect the total guild member count
+    """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -18,6 +40,16 @@ class GuildMemberCount(commands.Cog):
 
     # if the guild has a member count channel, update it
     async def update_channel_member_count(self, guild):
+        """
+        Updates a guild channel to reflect the total guild member count
+
+        ...
+
+        Parameters
+        ----------
+        guild : discord.Guild
+            The guild that contains the channel to update
+        """
         db = SQL()
         channel_id = db.get_guild_channel_id(guild.id)
         db.close()
@@ -51,6 +83,18 @@ class GuildMemberCount(commands.Cog):
         interaction: discord.Interaction,
         channel: Union[discord.TextChannel, discord.VoiceChannel],
     ):
+        """
+        Set a guild channel to display the guild's member count
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        channel : discord.TextChannel, discord.VoiceChannel
+            The channel that will get edited to reflect the total member count
+        """
         db = SQL()
         db.update_guild_channel_id(interaction.guild.id, channel.id)
         db.close()
@@ -71,6 +115,16 @@ class GuildMemberCount(commands.Cog):
     )
     @app_commands.checks.has_permissions(manage_channels=True)
     async def get_member_count_channel(self, interaction: discord.Interaction):
+        """
+        Show the channel that is currently set to display the guild's member count
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        """
         db = SQL()
         channel_id = db.get_guild_channel_id(interaction.guild.id)
         db.close()
@@ -108,6 +162,10 @@ class GuildMemberCount(commands.Cog):
     # Set accordingly to avoid rate limit (2 per 10 minutes)
     @tasks.loop(minutes=6)
     async def update_member_count_task(self):
+        """
+        Background task that updates a guild channel to reflect the total guild member count
+        """
+
         print(f"Running member count task...")
         # update member count for all guilds bot is connected to
         if len(self.bot.guilds) > 0:
