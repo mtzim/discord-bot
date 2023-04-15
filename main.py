@@ -10,13 +10,41 @@ from discord.ext import commands
 from discord.ext.commands import Greedy, Context
 
 
-class MyBot(commands.Bot):
+class CustomBot(commands.Bot):
+    """
+    Represents a custom Discord bot.
+
+    ...
+
+    Attributes
+    ----------
+    initial_extensions : List
+        List of Cogs to load
+    help_dict : Dict
+        Dictionary that contains all categories as a key and commands that belong to that category as a value
+
+    Methods
+    -------
+    get_prefix(message)
+        Retreives the prefix that's stored in the database for non-slash commands
+    setup_hook()
+        Loads all of the cogs stored in initial_extensions
+    close()
+        Closes the Bot's connection to Discord
+    on_ready()
+        Ensures that all guild information contained in the database is in sync with all guilds the Bot is a member of
+    on_guild_join(guild)
+        Add a guild's name and id to the database when the Bot joins or creates a guild
+    on_guild_remove(guild)
+        Removes a guild's entry from the database when a guild is removed from the Bot
+    on_guild_update(before,after)
+        Updates the guild name in the database to match the server's guild name if it changes
+    """
+
     def __init__(self, *args, **kwargs):
 
         if "intents" not in kwargs:
             intents = Intents.all()
-            # intents.members = True
-            # intents.message_content = True
             kwargs["intents"] = intents
 
         # Default prefix is assigned during database table creation
@@ -35,20 +63,45 @@ class MyBot(commands.Bot):
 
         self.help_dict = {}
 
-    async def get_prefix(self, message: Message, /) -> Union[List[str], str]:
+    async def get_prefix(self, message: Message, /) -> Union[str, None]:
+        """
+        Retreives the prefix that's stored in the database for non-slash commands
+
+        ...
+
+        Parameters
+        ----------
+        message : discord.Message
+            The message context to get the prefix of
+
+        Returns
+        -------
+        prefix : str, None
+            A prefix that the bot is listening for
+        """
         db = SQL()
         prefix = db.get_prefix(message.guild.id)
         db.close()
         return prefix
 
     async def setup_hook(self):
+        """
+        Loads all of the cogs stored in initial_extensions
+        """
         for ext in self.initial_extensions:
             await self.load_extension(ext)
 
     async def close(self):
+        """
+        Closes the Bot's connection to Discord
+        """
         await super().close()
 
     async def on_ready(self):
+        """
+        Ensures that all guild information contained in the database is in sync with all guilds the Bot is a member of
+        """
+
         print(f"Logged into Discord as {self.user} (ID: {self.user.id})")
 
         if len(self.guilds) > 0:
@@ -66,19 +119,48 @@ class MyBot(commands.Bot):
             db.close()
 
     async def on_guild_join(self, guild: Guild):
-        """Adds the guild entry to the database when the bot joins the guild."""
+        """
+        Add a guild's name and id to the database when the Bot joins or creates a guild
+
+        ...
+
+        Parameters
+        ----------
+        guild : discord.Guild
+            The guild that was joined
+        """
         db = SQL()
         db.add_guild(guild.name, guild.id)
         db.close()
 
     async def on_guild_remove(self, guild: Guild):
-        """Removes the guild entry from the database if the bot leaves or gets removed from the guild."""
+        """
+        Removes a guild's entry from the database when a guild is removed from the Bot
+
+        ...
+
+        Parameters
+        ----------
+        guild : discord.Guild
+            The guild that got removed
+        """
         db = SQL()
         db.delete_guild(guild.id)
         db.close()
 
     async def on_guild_update(self, before: Guild, after: Guild):
-        """Updates the guild name in the database to match the server's guild name if it changes."""
+        """
+        Updates the guild name in the database to match the server's guild name if it changes
+
+        ...
+
+        Parameters
+        ----------
+        before : discord.Guild
+            The guild prior to being updated
+        after : discord.Guild
+            The guild after being updated
+        """
         if before.name != after.name:
             db = SQL()
             db.update_guild_name(after.name, after.id)
@@ -100,12 +182,31 @@ logger.addHandler(handler)
 load_dotenv()
 
 
-def load_commands(bot):
-    """Load default commands"""
+def load_commands(bot: commands.Bot):
+    """
+    Load default commands
+
+    ...
+
+    Parameters
+    ----------
+    bot : commands.Bot
+        A custom Discord Bot
+    """
 
     @bot.command(hidden=True)
     @commands.is_owner()
     async def shutdown(ctx: commands.Context):
+        """
+        Shutdown the Discord Bot
+
+        ...
+
+        Parameters
+        ----------
+        ctx : commands.Context
+            Context in which the command is being invoked under
+        """
         await ctx.bot.close()
 
     @bot.tree.command(
@@ -113,6 +214,16 @@ def load_commands(bot):
         extras={"module": "General"},
     )
     async def ping(interaction: discord.Interaction) -> None:
+        """
+        Check if the bot is online
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        """
         await interaction.response.send_message(
             f"Pong! `{round(interaction.client.latency*1000)}ms`"
         )
@@ -126,6 +237,24 @@ def load_commands(bot):
         guilds: Greedy[discord.Object],
         spec: Optional[Literal["~", "*", "^"]] = None,
     ) -> None:
+        """
+        Syncs the slash commands to Discord and creates a dictionary that contains all categories and the commands belonging to them,
+        calling this command by itself will perform a global sync
+
+        ...
+
+        Parameters
+        ----------
+        ctx : commands.Context
+            Context in which the command is being invoked under
+        guilds : discord.Object
+            Specific Guild ids to sync
+        spec : Literal["~", "*", "^"], optional, default = None
+            The special character that determines how the commands will get synced
+            ~ - sync current guild
+            * - copies all global app commands to current guild, creates a help dictionary, and syncs
+            ^ - clears all commands from the current guild target and syncs (removes guild commands)
+        """
         if not guilds:
             if spec == "~":
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
@@ -133,12 +262,8 @@ def load_commands(bot):
                 ctx.bot.tree.copy_global_to(guild=ctx.guild)
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
                 # use to form help command
-                # help = {"Default": ["sync","help","test"], "Cog": ["ping","update"]}
-                # for each command define extras section for which module they belong
-                # make a dictionary with key = module names and value = list of command names
-                # extras={"module": "Default"}
+                # i.e. help = {"General": ["ping","help","prefix"], "Utility": ["avatar","userinfo"]}
                 slash_commands = bot.tree.get_commands()
-                # help_dict = {}
                 for x in slash_commands:
                     if "module" in x.extras.keys():
                         cmd_category = x.extras["module"]
@@ -177,7 +302,7 @@ def load_commands(bot):
 if __name__ == "__main__":
     token = os.getenv("DISCORD_TOKEN")
     gid = os.getenv("GUILD_ID")
-    bot = MyBot()
+    bot = CustomBot()
     load_commands(bot)
 
     bot.run(token)
