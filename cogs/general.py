@@ -6,10 +6,6 @@ from discord import app_commands
 from typing import Dict, List, Optional
 from db_helper import SqlHelper as SQL
 
-# TODO: for /help category consider deleting or removing view before passing it off to a new view,
-# there might be potential memory leak(?) over time as the views pile up from not being discarded
-# This might also speed up the view changes too if they look like they're hanging
-
 # determine if command is a subcommand and get its parent to include full command
 def option_details(command_info: app_commands.Command, option: str) -> str:
     """
