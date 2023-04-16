@@ -51,7 +51,7 @@ class CustomBot(commands.Bot):
         if "command_prefix" not in kwargs:
             kwargs["command_prefix"] = self.get_prefix
 
-        super().__init__(*args, help_command=CustomHelpCommand(), **kwargs)
+        super().__init__(*args, help_command=None, **kwargs)
 
         self.initial_extensions = [
             "cogs.timezone_presence",
@@ -255,14 +255,9 @@ def load_commands(bot: commands.Bot):
             * - copies all global app commands to current guild, creates a help dictionary, and syncs
             ^ - clears all commands from the current guild target and syncs (removes guild commands)
         """
-        if not guilds:
-            if spec == "~":
-                synced = await ctx.bot.tree.sync(guild=ctx.guild)
-            elif spec == "*":
-                ctx.bot.tree.copy_global_to(guild=ctx.guild)
-                synced = await ctx.bot.tree.sync(guild=ctx.guild)
-                # use to form help command
-                # i.e. help = {"General": ["ping","help","prefix"], "Utility": ["avatar","userinfo"]}
+
+        def make_help_dict(bot: commands.Bot) -> None:
+            if not bot.help_dict:
                 slash_commands = bot.tree.get_commands()
                 for x in slash_commands:
                     if "module" in x.extras.keys():
@@ -273,12 +268,25 @@ def load_commands(bot: commands.Bot):
                             hlist_vals = bot.help_dict[cmd_category]
                             hlist_vals.append(x.name)
                             bot.help_dict[cmd_category] = hlist_vals
+
+        if not guilds:
+            if spec == "~":
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+                make_help_dict(ctx.bot)
+            elif spec == "*":
+                ctx.bot.tree.copy_global_to(guild=ctx.guild)
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+                # use to form help command
+                # i.e. help = {"General": ["ping","help","prefix"], "Utility": ["avatar","userinfo"]}
+                make_help_dict(ctx.bot)
             elif spec == "^":
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
                 await ctx.bot.tree.sync(guild=ctx.guild)
                 synced = []
+                make_help_dict(ctx.bot)
             else:
                 synced = await ctx.bot.tree.sync()
+                make_help_dict(ctx.bot)
 
             await ctx.send(
                 f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
@@ -289,6 +297,7 @@ def load_commands(bot: commands.Bot):
         for guild in guilds:
             try:
                 await ctx.bot.tree.sync(guild=guild)
+                make_help_dict(ctx.bot)
             except discord.HTTPException:
                 pass
             else:
