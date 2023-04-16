@@ -23,9 +23,10 @@ A simple Discord bot with a set of utility and moderation tools.
 
 **Current Features:**
 
+- Slash commands
 - Set your own prefix (Default: `?`)
 - Prune messages
-- Member count channel
+- Server Member count channel
 - JST timezone display
 - User avatar fetcher
 - User info fetcher
