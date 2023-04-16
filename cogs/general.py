@@ -799,6 +799,16 @@ class General(commands.Cog):
             )
         db.close()
 
+    @view_prefix.error
+    @set_prefix.error
+    async def prefix_error(self, interaction: discord.Interaction, error):
+        if type(error) == app_commands.MissingPermissions:
+            await interaction.response.send_message(
+                f"You lack the necessary permissions for this command. You need to be able to `manage guild`."
+            )
+        else:
+            await interaction.response.send_message(f"Error: {type(error)}, {error}")
+
 
 async def setup(bot):
     await bot.add_cog(General(bot))
