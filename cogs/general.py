@@ -750,7 +750,7 @@ class General(commands.Cog):
     prefix_group = app_commands.Group(
         name="prefix", description="Manage command prefix", extras={"module": "General"}
     )
-    # app_commands.checks.has_role for guild permissions?
+
     @prefix_group.command(name="set", description="Set Prefix")
     @app_commands.describe(prefix="[STRING] New Prefix")
     @app_commands.checks.has_permissions(manage_guild=True)

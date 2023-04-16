@@ -71,10 +71,15 @@ class GuildMemberCount(commands.Cog):
         else:
             print(f"channel id not found, can't update member count for {guild}")
 
-    @app_commands.command(
-        name="set_channel",
-        description=f"Set a guild channel to display the guild's member count",
+    membercount_group = app_commands.Group(
+        name="membercount",
+        description="Manage server member count channel",
         extras={"module": "Config"},
+    )
+
+    @membercount_group.command(
+        name="set",
+        description="Set a guild channel to display the guild's member count",
     )
     @app_commands.describe(channel="[CHANNEL] guild channel to set")
     @app_commands.checks.has_permissions(manage_channels=True)
@@ -108,10 +113,9 @@ class GuildMemberCount(commands.Cog):
                 f"Bot doesn't have permission to edit the member count channel. (Channel: {channel.name}#{channel.id})"
             )
 
-    @app_commands.command(
-        name="get_channel",
-        description=f"Show the channel that is currently set to display the guild's member count",
-        extras={"module": "Config"},
+    @membercount_group.command(
+        name="view",
+        description="Show the channel that is currently set to display the guild's member count",
     )
     @app_commands.checks.has_permissions(manage_channels=True)
     async def get_member_count_channel(self, interaction: discord.Interaction):
