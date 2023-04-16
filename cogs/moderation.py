@@ -381,23 +381,17 @@ class Moderation(commands.Cog):
                 await msg_to_del.delete(delay=10)
 
     @prune.error
-    async def prune_err(self, interaction, err):
-        if type(err) == discord.ext.commands.errors.MissingRequiredArgument:
+    async def prune_err(self, interaction: discord.Interaction, error):
+        if type(error) == app_commands.MissingPermissions:
             await interaction.response.send_message(
-                f"One of the options out of `amount or until` is mandatory to process this command.\nTo see the usage and definitions of these options, you can run the command `?help prune`."
+                f"You lack the necessary permissions for this command. You need to be able to `manage messages` and `read message history`."
             )
-        elif type(err) == discord.ext.commands.errors.BadArgument:
+        elif type(error) == app_commands.BotMissingPermissions:
             await interaction.response.send_message(
-                f"Invalid syntax, refer to `?help prune` to see usage and definitions for this command."
+                f"I lack the necessary permissions for this command. I need to be able to `manage messages` and `read message history`."
             )
-        elif type(err) == discord.ext.commands.errors.MissingPermissions:
-            await interaction.response.send_message(
-                f"You lack the necessary permissions for this command."
-            )
-        elif type(err) == discord.ext.commands.errors.BotMissingPermissions:
-            await interaction.response.send_message(f"{err}")
         else:
-            await interaction.response.send_message(f"Error: {type(err)}, {err}")
+            await interaction.response.send_message(f"Error: {type(error)}, {error}")
 
 
 async def setup(bot):
