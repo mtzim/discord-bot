@@ -799,11 +799,6 @@ class General(commands.Cog):
             )
         db.close()
 
-    @set_prefix.error
-    async def prefix_err(ctx, err):
-        if type(err) == commands.errors.MissingRequiredArgument:
-            await ctx.reply(f"Missing required argument `<NEW PREFIX>`")
-
 
 async def setup(bot):
     await bot.add_cog(General(bot))

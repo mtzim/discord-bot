@@ -147,17 +147,13 @@ class GuildMemberCount(commands.Cog):
 
     @get_member_count_channel.error
     @set_member_count_channel_id.error
-    async def member_count_cmd_error(self, ctx, err):
-        if type(err) == discord.ext.commands.errors.MissingRequiredArgument:
-            await ctx.reply(
-                f"Invalid format - Try: `?set_channel <CHANNEL ID>`\nChannel ID should be a valid ID for an already existing channel within the server."
+    async def member_count_cmd_error(self, interaction: discord.Interaction, error):
+        if type(error) == app_commands.MissingPermissions:
+            await interaction.response.send_message(
+                f"You lack the necessary permissions for this command. You need to be able to `manage channels`."
             )
-        elif type(err) == discord.ext.commands.errors.BadArgument:
-            await ctx.reply(f"Invalid Channel id, please make sure it's an integer.")
-        elif type(err) == discord.ext.commands.errors.MissingPermissions:
-            await ctx.reply(f"You lack the necessary permissions for this command.")
         else:
-            await ctx.send(f"Error: {type(err)}, {err}")
+            await interaction.response.send_message(f"Error: {type(error)}, {error}")
 
     # Set accordingly to avoid rate limit (2 per 10 minutes)
     @tasks.loop(minutes=6)
