@@ -5,6 +5,24 @@ from discord.ext import commands, tasks
 
 # Presence rate limit once per 15 seconds
 class PresenceTime(commands.Cog):
+    """
+    A Cog that contains a background task that updates the Bot's presence with a time from a designated timezone.
+
+    ...
+
+    Attributes
+    ----------
+    bot : commands.Bot
+        The discord bot
+
+    Methods
+    -------
+    time_channel_name()
+        Formats the timezone to display
+    update_time_task()
+        Updates the bot's presence with the formatted timezone
+    """
+
     def __init__(self, bot):
         self.bot = bot
 

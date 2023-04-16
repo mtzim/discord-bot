@@ -12,14 +12,7 @@ class CustomHelpCommand(commands.HelpCommand):
         options["command_attrs"] = {"help": "Usage: `?help <Command>`"}
         super().__init__(**options)
 
-        description = """**<:botAvatar:978780970377433178> Hello! I'm Mybot!**\n
-        Below you can see all the commands I know.
-        If you have any questions or comments about something ask on [Github](https://github.com/mtzim/discord-bot).\n
-        **Have a nice day!**"""
-
-        self.help_msg = discord.Embed(
-            description=description, color=discord.Color.blue()
-        )
+        self.help_msg = discord.Embed(color=discord.Color.blue())
 
     def add_field(self, name, value, inline: Optional[bool] = False):
         """Adds a Cog/Category with all commands related to it to the help message."""
@@ -55,8 +48,21 @@ class CustomHelpCommand(commands.HelpCommand):
     async def send_bot_help(
         self, mapping: Mapping[Optional[Cog], List[Command[Any, ..., Any]]], /
     ) -> None:
+
         ctx = self.context
         bot = ctx.bot
+
+        self.help_msg.set_author(
+            name=f"Hello! I'm {bot.user.name}!",
+            icon_url=f"{bot.user.display_avatar.url}",
+        )
+        # self.help_msg.set_thumbnail(url=f"{bot.user.display_avatar.url}")
+
+        description = f"""Below you can see all the commands I know.
+        If you have any questions or comments about something ask on [Github](https://github.com/mtzim/discord-bot).\n
+        **Have a nice day!**"""
+
+        self.help_msg.description = description
 
         def get_category(command, *, no_category=self.no_category):
             cog = command.cog
@@ -72,6 +78,7 @@ class CustomHelpCommand(commands.HelpCommand):
                 if self.sort_commands
                 else list(commands)
             )
+            # One section will be named after the bot class's name in main.py
             self.add_section(commands, heading=category)
 
         self.add_ending()
@@ -91,10 +98,11 @@ class CustomHelpCommand(commands.HelpCommand):
         return await super().send_group_help(group)
 
     async def send_command_help(self, command: Command[Any, ..., Any], /) -> None:
+        ctx = self.context
 
         signature = self.get_command_signature(command)
         if command.help:
-            usage = f"{command.help}"
+            usage = f"{command.help.replace(f'?{command}',f'{ctx.prefix}{command}')}"
         else:
             usage = f"Usage: `{signature}`"
 

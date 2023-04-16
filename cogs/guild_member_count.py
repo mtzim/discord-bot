@@ -1,9 +1,33 @@
+from typing import Union
 import discord
 from db_helper import SqlHelper as SQL
 from discord.ext import commands, tasks
+from discord import app_commands
 
 # Channel edit rate limit twice per 10 minutes
 class GuildMemberCount(commands.Cog):
+    """
+    A Cog containing commands and a task to set a guild channel to update periodically to display a guild's total member count.
+
+    ...
+
+    Attributes
+    ----------
+    bot : commands.Bot
+        The discord bot
+
+    Methods
+    -------
+    update_channel_member_count(guild)
+        Formats the timezone to display
+    set_member_count_channel_id(interaction,channel)
+        Set a guild channel to display the guild's member count
+    get_member_count_channel(interaction)
+        Show the channel that is currently set to display the guild's member count
+    update_member_count_task()
+        Background task that updates a guild channel to reflect the total guild member count
+    """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -16,7 +40,17 @@ class GuildMemberCount(commands.Cog):
 
     # if the guild has a member count channel, update it
     async def update_channel_member_count(self, guild):
-        db = SQL("discord_bot_data")
+        """
+        Updates a guild channel to reflect the total guild member count
+
+        ...
+
+        Parameters
+        ----------
+        guild : discord.Guild
+            The guild that contains the channel to update
+        """
+        db = SQL()
         channel_id = db.get_guild_channel_id(guild.id)
         db.close()
 
@@ -37,77 +71,108 @@ class GuildMemberCount(commands.Cog):
         else:
             print(f"channel id not found, can't update member count for {guild}")
 
-    @commands.command(name="set_channel", help="Usage: `?set_channel <CHANNEL ID>`")
-    @commands.has_guild_permissions(manage_channels=True)
-    async def set_member_count_channel_id(self, ctx, message: int):
-        # look at invoking command and get chid from it
-        channel_id = message
-        channel = discord.utils.get(ctx.guild.channels, id=channel_id)
+    membercount_group = app_commands.Group(
+        name="membercount",
+        description="Manage server member count channel",
+        extras={"module": "Config"},
+    )
 
-        # check if channel exists
-        if channel != None:
-            db = SQL("discord_bot_data")
-            db.update_guild_channel_id(ctx.guild.id, channel.id)
-            db.close()
-            await ctx.reply(
-                f"Updated the channel id successfully, Member Count Channel Id: {channel.id}."
+    @membercount_group.command(
+        name="set",
+        description="Set a guild channel to display the guild's member count",
+    )
+    @app_commands.describe(channel="[CHANNEL] guild channel to set")
+    @app_commands.checks.has_permissions(manage_channels=True)
+    async def set_member_count_channel_id(
+        self,
+        interaction: discord.Interaction,
+        channel: Union[discord.TextChannel, discord.VoiceChannel],
+    ):
+        """
+        Set a guild channel to display the guild's member count
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        channel : discord.TextChannel, discord.VoiceChannel
+            The channel that will get edited to reflect the total member count
+        """
+        db = SQL()
+        db.update_guild_channel_id(interaction.guild.id, channel.id)
+        db.close()
+        await interaction.response.send_message(
+            f"Updated the channel id successfully, Member Count Channel Id: {channel.id}."
+        )
+        try:
+            await channel.edit(name=f"Members - {len(interaction.guild.members)}")
+        except discord.errors.Forbidden:
+            await interaction.response.send_message(
+                f"Bot doesn't have permission to edit the member count channel. (Channel: {channel.name}#{channel.id})"
             )
-            try:
-                await channel.edit(name=f"Members - {len(ctx.guild.members)}")
-            except discord.errors.Forbidden:
-                await ctx.send(
-                    f"Bot doesn't have permission to edit the member count channel. (Channel: {channel.name}#{channel_id})"
-                )
 
-        else:
-            await ctx.reply(
-                "Channel Id not found within this server, please try again."
-            )
+    @membercount_group.command(
+        name="view",
+        description="Show the channel that is currently set to display the guild's member count",
+    )
+    @app_commands.checks.has_permissions(manage_channels=True)
+    async def get_member_count_channel(self, interaction: discord.Interaction):
+        """
+        Show the channel that is currently set to display the guild's member count
 
-    @commands.command(name="get_channel", help="Usage: `?get_channel`")
-    @commands.has_guild_permissions(manage_channels=True)
-    async def get_member_count_channel(self, ctx: commands.Context):
-        db = SQL("discord_bot_data")
-        channel_id = db.get_guild_channel_id(ctx.guild.id)
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        """
+        db = SQL()
+        channel_id = db.get_guild_channel_id(interaction.guild.id)
         db.close()
 
         # check if a channel has been set
         if channel_id != None:
-            channel = discord.utils.get(ctx.guild.channels, id=channel_id)
+            channel = discord.utils.get(interaction.guild.channels, id=channel_id)
 
             # check if channel still exists in the guild
             if channel != None:
-                await ctx.reply(
+                await interaction.response.send_message(
                     f"Member count channel currently set to `{channel} (ID:{channel_id})`"
                 )
             else:
-                await ctx.reply(f"Channel no longer exists, please set a new one.")
+                await interaction.response.send_message(
+                    f"Channel no longer exists, please set a new one."
+                )
         else:
-            await ctx.reply(f"No channel currently set.")
+            await interaction.response.send_message(f"No channel currently set.")
 
     @get_member_count_channel.error
     @set_member_count_channel_id.error
-    async def member_count_cmd_error(self, ctx, err):
-        if type(err) == discord.ext.commands.errors.MissingRequiredArgument:
-            await ctx.reply(
-                f"Invalid format - Try: `?set_channel <CHANNEL ID>`\nChannel ID should be a valid ID for an already existing channel within the server."
+    async def member_count_cmd_error(self, interaction: discord.Interaction, error):
+        if type(error) == app_commands.MissingPermissions:
+            await interaction.response.send_message(
+                f"You lack the necessary permissions for this command. You need to be able to `manage channels`."
             )
-        elif type(err) == discord.ext.commands.errors.BadArgument:
-            await ctx.reply(f"Invalid Channel id, please make sure it's an integer.")
-        elif type(err) == discord.ext.commands.errors.MissingPermissions:
-            await ctx.reply(f"You lack the necessary permissions for this command.")
         else:
-            await ctx.send(f"Error: {type(err)}, {err}")
+            await interaction.response.send_message(f"Error: {type(error)}, {error}")
 
     # Set accordingly to avoid rate limit (2 per 10 minutes)
     @tasks.loop(minutes=6)
     async def update_member_count_task(self):
-        print(f"Updating member counts...")
+        """
+        Background task that updates a guild channel to reflect the total guild member count
+        """
 
+        print(f"Running member count task...")
         # update member count for all guilds bot is connected to
         if len(self.bot.guilds) > 0:
+            print(f"Updating member counts...")
             for guild in self.bot.guilds:
                 await self.update_channel_member_count(guild)
+            print(f"Finished updating.")
 
 
 async def setup(bot):
