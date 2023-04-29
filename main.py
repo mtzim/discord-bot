@@ -10,6 +10,16 @@ from discord.ext import commands
 from discord.ext.commands import Greedy, Context
 
 
+"""
+TODO: 
+GPT integration
+    slash command interaction for text responses
+    slash command to join voice channel
+    receive audio from voice channel
+    play audio to voice channel
+"""
+
+
 class CustomBot(commands.Bot):
     """
     Represents a custom Discord bot.
@@ -59,6 +69,7 @@ class CustomBot(commands.Bot):
             "cogs.utility",
             "cogs.moderation",
             "cogs.general",
+            "cogs.chatbot",
         ]
 
         self.help_dict = {}
