@@ -20,11 +20,12 @@ class ChatBot(commands.Cog):
     )
     @app_commands.describe(input="[STRING] Ask or tell the chatbot something")
     async def chatbot_text(self, interaction: discord.Interaction, input: str):
+        await interaction.response.defer()
         response = self.chat_gpt.gpt_text(input)
         # embed = discord.Embed(color=discord.Color.blue())
         # embed.add_field(name="\u2800", value=f"{response}", inline=False)
         # print(f"\n{response}\n")
-        await interaction.response.send_message(content=response)
+        await interaction.followup.send(content=response)
 
 
 async def setup(bot):
