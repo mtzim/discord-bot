@@ -1,15 +1,26 @@
+import os
 import discord
 from discord.ext import commands
 from discord import app_commands
 
 
 class SampleCog(commands.Cog):
+
+    MODULE_NAME = {"module": f"{os.path.splitext(os.path.basename(__file__))[0].capitalize()}"}
+
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"* Cog: Sample loaded.")
+        print(f"* Cog: {self.MODULE_NAME['module']} loaded.")
+
+    @app_commands.command(
+        description=f"Sample description",
+        extras=MODULE_NAME,
+    )
+    async def sample_command(self, interaction: discord.Interaction):
+        return await interaction.response.send_message(content="Sample Response.")
 
 
 async def setup(bot):
