@@ -6,9 +6,9 @@ from discord.ext import commands, tasks
 from discord import app_commands
 
 # Channel edit rate limit twice per 10 minutes
-class GuildMemberCount(commands.Cog):
+class BotConfig(commands.Cog):
     """
-    A Cog containing commands and a task to set a guild channel to update periodically to display a guild's total member count.
+    A Cog containing configuration commands and a task to set a guild channel to update periodically to display a guild's total member count.
 
     ...
 
@@ -25,6 +25,10 @@ class GuildMemberCount(commands.Cog):
         Set a guild channel to display the guild's member count
     get_member_count_channel(interaction)
         Show the channel that is currently set to display the guild's member count
+    set_prefix(interaction,prefix)
+        Set Prefix
+    view_prefix(interaction)
+        View Prefix
     update_member_count_task()
         Background task that updates a guild channel to reflect the total guild member count
     """
@@ -243,4 +247,4 @@ class GuildMemberCount(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(GuildMemberCount(bot))
+    await bot.add_cog(BotConfig(bot))
