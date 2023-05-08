@@ -235,7 +235,7 @@ def load_commands(bot: commands.Bot):
             ^ - clears all commands from the current guild target and syncs (removes guild commands)
         """
 
-        def make_help_dict(bot: commands.Bot) -> None:
+        def make_help_dict(bot: CustomBot) -> None:
             if not bot.help_dict:
                 slash_commands = bot.tree.get_commands()
                 for x in slash_commands:
