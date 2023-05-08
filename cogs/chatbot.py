@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from gpt_mode import ChatGPT
+from gpt_core.gpt_mode import ChatGPT
 
 
 class ChatBot(commands.Cog):
