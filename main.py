@@ -165,21 +165,6 @@ class CustomBot(commands.Bot):
             db.close()
 
 
-# Setup logging
-if not os.path.exists("./logs"):
-    os.makedirs("./logs")
-logger = logging.getLogger("discord")
-logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(filename="./logs/discord.log", encoding="utf-8", mode="w")
-handler.setFormatter(
-    logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
-)
-logger.addHandler(handler)
-
-# Load data from .env file
-load_dotenv()
-
-
 def load_commands(bot: commands.Bot):
     """
     Load default commands
@@ -288,6 +273,22 @@ def load_commands(bot: commands.Bot):
 # Changes to async in discord.py 2.0
 
 if __name__ == "__main__":
+    # Setup logging
+    if not os.path.exists("./logs"):
+        os.makedirs("./logs")
+    logger = logging.getLogger("discord")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler(
+        filename="./logs/discord.log", encoding="utf-8", mode="w"
+    )
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
+    )
+    logger.addHandler(handler)
+
+    # Load data from .env file
+    load_dotenv()
+
     token = os.getenv("DISCORD_TOKEN")
     bot = CustomBot()
     load_commands(bot)

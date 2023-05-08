@@ -5,7 +5,7 @@ from discord.ui import Button, Select, View
 from discord import ButtonStyle
 from discord import app_commands
 from typing import List, Optional
-from db_helper import SqlHelper as SQL
+from dotenv import load_dotenv
 
 # determine if command is a subcommand and get its parent to include full command
 def option_details(command_info: app_commands.Command, option: str) -> str:
@@ -610,13 +610,15 @@ class General(commands.Cog):
         ]
 
         slash_categories = [category.lower() for category in self.bot.help_dict.keys()]
-
         if input is None:
+            load_dotenv()
+            invite_url = os.getenv("INVITE_URL")
             # help_dict is {'Default': ['hello', 'help']}
             bot_name = interaction.client.application.name
             avatar_url = interaction.client.application.icon.url
             description = f"""Below you can see all the commands I know.
             If you have any questions or comments about something ask on [Github](https://github.com/mtzim/discord-bot).\n
+            [Invite Me]({invite_url})\n
             **Have a nice day!**"""
             trailing_text = """\n\n`help commandName` - Command Details
             `help commandName subCommandName` - Sub Command Details
