@@ -154,6 +154,68 @@ class GuildMemberCount(commands.Cog):
         else:
             await interaction.response.send_message(f"No channel currently set.")
 
+    prefix_group = app_commands.Group(
+        name="prefix", description="Manage command prefix", extras=MODULE_NAME
+    )
+
+    @prefix_group.command(name="set", description="Set Prefix")
+    @app_commands.describe(prefix="[STRING] New Prefix")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def set_prefix(self, interaction: discord.Interaction, prefix: str):
+        """
+        Set Prefix
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        prefix : str
+            A guild's new prefix
+        """
+        db = SQL()
+        if not db.set_prefix(interaction.guild_id, prefix):
+            await interaction.response.send_message(f"Unable to change prefix.")
+        else:
+            await interaction.response.send_message(
+                f"Prefix successfully changed to `{prefix}`"
+            )
+        db.close()
+
+    @prefix_group.command(name="view", description="View Prefix")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def view_prefix(self, interaction: discord.Interaction):
+        """
+        View Prefix
+
+        ...
+
+        Parameters
+        ----------
+        interaction : discord.Interaction
+            The interaction caused by a user performing a slash command
+        """
+        db = SQL()
+        prefix = db.get_prefix(interaction.guild_id)
+        if not prefix:
+            await interaction.response.send_message(f"Unable to retrieve prefix.")
+        else:
+            await interaction.response.send_message(
+                f"Prefix currently set to `{prefix}`"
+            )
+        db.close()
+
+    @view_prefix.error
+    @set_prefix.error
+    async def prefix_error(self, interaction: discord.Interaction, error):
+        if type(error) == app_commands.MissingPermissions:
+            await interaction.response.send_message(
+                f"You lack the necessary permissions for this command. You need to be able to `manage guild`."
+            )
+        else:
+            await interaction.response.send_message(f"Error: {type(error)}, {error}")
+
     @get_member_count_channel.error
     @set_member_count_channel_id.error
     async def member_count_cmd_error(self, interaction: discord.Interaction, error):

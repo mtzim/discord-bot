@@ -209,25 +209,6 @@ def load_commands(bot: commands.Bot):
         """
         await ctx.bot.close()
 
-    @bot.tree.command(
-        description=f"Check if the bot is online",
-        extras={"module": "General"},
-    )
-    async def ping(interaction: discord.Interaction) -> None:
-        """
-        Check if the bot is online
-
-        ...
-
-        Parameters
-        ----------
-        interaction : discord.Interaction
-            The interaction caused by a user performing a slash command
-        """
-        await interaction.response.send_message(
-            f"Pong! `{round(interaction.client.latency*1000)}ms`"
-        )
-
     # Sync slash commands globally or to specific guilds
     @bot.command(hidden=True)
     @commands.guild_only()
