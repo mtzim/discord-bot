@@ -289,7 +289,6 @@ def load_commands(bot: commands.Bot):
 
 if __name__ == "__main__":
     token = os.getenv("DISCORD_TOKEN")
-    gid = os.getenv("GUILD_ID")
     bot = CustomBot()
     load_commands(bot)
 
