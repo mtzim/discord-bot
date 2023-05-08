@@ -54,7 +54,7 @@ class CustomBot(commands.Bot):
 
         self.initial_extensions = [
             "cogs.timepresence",
-            "cogs.membercount",
+            "cogs.config",
             "cogs.utility",
             "cogs.moderation",
             "cogs.general",
