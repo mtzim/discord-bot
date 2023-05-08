@@ -53,7 +53,7 @@ class CustomBot(commands.Bot):
         super().__init__(*args, help_command=None, **kwargs)
 
         self.initial_extensions = [
-            "cogs.timezone_presence",
+            "cogs.timepresence",
             "cogs.membercount",
             "cogs.utility",
             "cogs.moderation",
