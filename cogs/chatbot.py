@@ -144,7 +144,7 @@ class ChatBot(commands.Cog):
         stop = self.chat_gpt.stop
 
         await interaction.response.send_message(
-            content=f"Conversation limit: `{conv_limit}`\nModel: {model}\nTemperature: `{temperature}`\nMax tokens: `{max_tokens}`\nPresence penalty: `{pp}`\nFrequency penalty: `{fp}`\nStop: `{stop}`"
+            content=f"Conversation limit: `{conv_limit}`\nModel: `{model}`\nTemperature: `{temperature}`\nMax tokens: `{max_tokens}`\nPresence penalty: `{pp}`\nFrequency penalty: `{fp}`\nStop: `{stop}`"
         )
 
 
