@@ -4,20 +4,9 @@ import discord
 from discord import Message, Intents, Guild
 from db_helper import SqlHelper as SQL
 from dotenv import load_dotenv
-from customhelper import CustomHelpCommand
-from typing import Union, List, Literal, Optional
+from typing import Union, Literal, Optional
 from discord.ext import commands
 from discord.ext.commands import Greedy, Context
-
-
-"""
-TODO: 
-GPT integration
-    slash command interaction for text responses
-    slash command to join voice channel
-    receive audio from voice channel
-    play audio to voice channel
-"""
 
 
 class CustomBot(commands.Bot):
@@ -65,7 +54,7 @@ class CustomBot(commands.Bot):
 
         self.initial_extensions = [
             "cogs.timezone_presence",
-            "cogs.guild_member_count",
+            "cogs.membercount",
             "cogs.utility",
             "cogs.moderation",
             "cogs.general",
