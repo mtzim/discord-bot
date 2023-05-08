@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Optional
 import discord
 from discord import app_commands
@@ -24,16 +25,20 @@ class Moderation(commands.Cog):
         A helper that handles message pruning logic based on the parameters that were supplied
     """
 
+    MODULE_NAME = {
+        "module": f"{os.path.splitext(os.path.basename(__file__))[0].capitalize()}"
+    }
+
     def __init__(self, bot) -> None:
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"* Cog: Moderation loaded.")
+        print(f"* Cog: {self.MODULE_NAME['module']} loaded.")
 
     @app_commands.command(
         description=f"Message Pruning",
-        extras={"module": "Moderation"},
+        extras=MODULE_NAME,
     )
     @app_commands.describe(
         amount="[INTEGER] Prunes messages by the specified amount",

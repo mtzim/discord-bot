@@ -1,9 +1,10 @@
+import os
 import discord
 from discord.ext import commands
 from discord.ui import Button, Select, View
 from discord import ButtonStyle
 from discord import app_commands
-from typing import Dict, List, Optional
+from typing import List, Optional
 from db_helper import SqlHelper as SQL
 
 # determine if command is a subcommand and get its parent to include full command
@@ -565,12 +566,16 @@ class General(commands.Cog):
         View Prefix
     """
 
+    MODULE_NAME = {
+        "module": f"{os.path.splitext(os.path.basename(__file__))[0].capitalize()}"
+    }
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"* Cog: General loaded.")
+        print(f"* Cog: {self.MODULE_NAME['module']} loaded.")
 
     # /help category
     # check if category - output category info (how to retrieve category/module)
@@ -580,7 +585,7 @@ class General(commands.Cog):
     @app_commands.command(
         name="help",
         description=f"Learn about commands and supported features",
-        extras={"module": "General"},
+        extras=MODULE_NAME,
     )
     @app_commands.describe(input="[STRING] Category, Command, or Page")
     async def slash_help(
@@ -748,7 +753,7 @@ class General(commands.Cog):
             # selecting a command will lead to nav view with the command selected
 
     prefix_group = app_commands.Group(
-        name="prefix", description="Manage command prefix", extras={"module": "General"}
+        name="prefix", description="Manage command prefix", extras=MODULE_NAME
     )
 
     @prefix_group.command(name="set", description="Set Prefix")

@@ -1,3 +1,4 @@
+import os
 from typing import Union
 import discord
 from db_helper import SqlHelper as SQL
@@ -28,13 +29,17 @@ class GuildMemberCount(commands.Cog):
         Background task that updates a guild channel to reflect the total guild member count
     """
 
+    MODULE_NAME = {
+        "module": f"{os.path.splitext(os.path.basename(__file__))[0].capitalize()}"
+    }
+
     def __init__(self, bot):
         self.bot = bot
 
     # called when the client is done preparing the data received from Discord
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"* Cog: Guild Member Count loaded.")
+        print(f"* Cog: {self.MODULE_NAME['module']} loaded.")
 
         await self.update_member_count_task.start()
 
@@ -74,7 +79,7 @@ class GuildMemberCount(commands.Cog):
     membercount_group = app_commands.Group(
         name="membercount",
         description="Manage server member count channel",
-        extras={"module": "Config"},
+        extras=MODULE_NAME,
     )
 
     @membercount_group.command(

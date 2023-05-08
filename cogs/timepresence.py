@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 import pytz
 import discord
@@ -23,12 +24,16 @@ class TimePresence(commands.Cog):
         Updates the bot's presence with the formatted timezone
     """
 
+    MODULE_NAME = {
+        "module": f"{os.path.splitext(os.path.basename(__file__))[0].capitalize()}"
+    }
+
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"* Cog: Channel Timezone loaded.")
+        print(f"* Cog: {self.MODULE_NAME['module']} loaded.")
         self.update_time_task.start()
 
     def time_channel_name(self):
