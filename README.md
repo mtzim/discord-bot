@@ -24,6 +24,7 @@ A simple Discord bot with a set of utility and moderation tools.
 **Current Features:**
 
 - Slash commands
+- OpenAI GPT Chatbot Integration
 - Set your own prefix (Default: `?`)
 - Prune messages
 - Server Member count channel

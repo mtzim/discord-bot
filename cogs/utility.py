@@ -1,7 +1,8 @@
+import os
 import discord
 from discord.ext import commands
 from typing import List, Optional
-from datetime import date, datetime
+from datetime import datetime
 from discord import app_commands
 
 
@@ -28,16 +29,20 @@ class Utility(commands.Cog):
         Formats the date to appear as Year/Month/Day
     """
 
+    MODULE_NAME = {
+        "module": f"{os.path.splitext(os.path.basename(__file__))[0].capitalize()}"
+    }
+
     def __init__(self, bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"* Cog: Utility loaded.")
+        print(f"* Cog: {self.MODULE_NAME['module']} loaded.")
 
     @app_commands.command(
         description=f"Display avatar of a user",
-        extras={"module": "Utility"},
+        extras=MODULE_NAME,
     )
     @app_commands.describe(user="[USER] user")
     async def avatar(
@@ -64,7 +69,7 @@ class Utility(commands.Cog):
 
     @app_commands.command(
         description=f"Display info about a user",
-        extras={"module": "Utility"},
+        extras=MODULE_NAME,
     )
     @app_commands.describe(user="[USER] user to show")
     async def userinfo(

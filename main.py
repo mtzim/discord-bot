@@ -4,8 +4,7 @@ import discord
 from discord import Message, Intents, Guild
 from db_helper import SqlHelper as SQL
 from dotenv import load_dotenv
-from customhelper import CustomHelpCommand
-from typing import Union, List, Literal, Optional
+from typing import Union, Literal, Optional
 from discord.ext import commands
 from discord.ext.commands import Greedy, Context
 
@@ -53,12 +52,11 @@ class CustomBot(commands.Bot):
 
         super().__init__(*args, help_command=None, **kwargs)
 
+        # Load all cogs
         self.initial_extensions = [
-            "cogs.timezone_presence",
-            "cogs.guild_member_count",
-            "cogs.utility",
-            "cogs.moderation",
-            "cogs.general",
+            "".join(f"cogs.{os.path.splitext(cog)[0]}")
+            for cog in os.listdir(".\cogs")
+            if os.path.isfile(os.path.join(".\cogs", cog)) and cog.endswith(".py")
         ]
 
         self.help_dict = {}
@@ -167,21 +165,6 @@ class CustomBot(commands.Bot):
             db.close()
 
 
-# Setup logging
-if not os.path.exists("./logs"):
-    os.makedirs("./logs")
-logger = logging.getLogger("discord")
-logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(filename="./logs/discord.log", encoding="utf-8", mode="w")
-handler.setFormatter(
-    logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
-)
-logger.addHandler(handler)
-
-# Load data from .env file
-load_dotenv()
-
-
 def load_commands(bot: commands.Bot):
     """
     Load default commands
@@ -208,25 +191,6 @@ def load_commands(bot: commands.Bot):
             Context in which the command is being invoked under
         """
         await ctx.bot.close()
-
-    @bot.tree.command(
-        description=f"Check if the bot is online",
-        extras={"module": "General"},
-    )
-    async def ping(interaction: discord.Interaction) -> None:
-        """
-        Check if the bot is online
-
-        ...
-
-        Parameters
-        ----------
-        interaction : discord.Interaction
-            The interaction caused by a user performing a slash command
-        """
-        await interaction.response.send_message(
-            f"Pong! `{round(interaction.client.latency*1000)}ms`"
-        )
 
     # Sync slash commands globally or to specific guilds
     @bot.command(hidden=True)
@@ -256,7 +220,7 @@ def load_commands(bot: commands.Bot):
             ^ - clears all commands from the current guild target and syncs (removes guild commands)
         """
 
-        def make_help_dict(bot: commands.Bot) -> None:
+        def make_help_dict(bot: CustomBot) -> None:
             if not bot.help_dict:
                 slash_commands = bot.tree.get_commands()
                 for x in slash_commands:
@@ -309,8 +273,23 @@ def load_commands(bot: commands.Bot):
 # Changes to async in discord.py 2.0
 
 if __name__ == "__main__":
+    # Setup logging
+    if not os.path.exists("./logs"):
+        os.makedirs("./logs")
+    logger = logging.getLogger("discord")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler(
+        filename="./logs/discord.log", encoding="utf-8", mode="w"
+    )
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
+    )
+    logger.addHandler(handler)
+
+    # Load data from .env file
+    load_dotenv()
+
     token = os.getenv("DISCORD_TOKEN")
-    gid = os.getenv("GUILD_ID")
     bot = CustomBot()
     load_commands(bot)
 

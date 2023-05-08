@@ -1,10 +1,11 @@
+import os
 import discord
 from discord.ext import commands
 from discord.ui import Button, Select, View
 from discord import ButtonStyle
 from discord import app_commands
-from typing import Dict, List, Optional
-from db_helper import SqlHelper as SQL
+from typing import List, Optional
+from dotenv import load_dotenv
 
 # determine if command is a subcommand and get its parent to include full command
 def option_details(command_info: app_commands.Command, option: str) -> str:
@@ -559,18 +560,20 @@ class General(commands.Cog):
     -------
     slash_help(interaction,input)
         Learn about commands and supported features
-    set_prefix(interaction,prefix)
-        Set Prefix
-    view_prefix(interaction)
-        View Prefix
+    ping(interaction)
+        Check if the bot is online
     """
+
+    MODULE_NAME = {
+        "module": f"{os.path.splitext(os.path.basename(__file__))[0].capitalize()}"
+    }
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"* Cog: General loaded.")
+        print(f"* Cog: {self.MODULE_NAME['module']} loaded.")
 
     # /help category
     # check if category - output category info (how to retrieve category/module)
@@ -580,7 +583,7 @@ class General(commands.Cog):
     @app_commands.command(
         name="help",
         description=f"Learn about commands and supported features",
-        extras={"module": "General"},
+        extras=MODULE_NAME,
     )
     @app_commands.describe(input="[STRING] Category, Command, or Page")
     async def slash_help(
@@ -607,13 +610,15 @@ class General(commands.Cog):
         ]
 
         slash_categories = [category.lower() for category in self.bot.help_dict.keys()]
-
         if input is None:
+            load_dotenv()
+            invite_url = os.getenv("INVITE_URL")
             # help_dict is {'Default': ['hello', 'help']}
             bot_name = interaction.client.application.name
             avatar_url = interaction.client.application.icon.url
             description = f"""Below you can see all the commands I know.
             If you have any questions or comments about something ask on [Github](https://github.com/mtzim/discord-bot).\n
+            [Invite Me]({invite_url})\n
             **Have a nice day!**"""
             trailing_text = """\n\n`help commandName` - Command Details
             `help commandName subCommandName` - Sub Command Details
@@ -747,40 +752,13 @@ class General(commands.Cog):
             # reuse nav view and is_cmd code
             # selecting a command will lead to nav view with the command selected
 
-    prefix_group = app_commands.Group(
-        name="prefix", description="Manage command prefix", extras={"module": "General"}
+    @app_commands.command(
+        description=f"Check if the bot is online",
+        extras=MODULE_NAME,
     )
-
-    @prefix_group.command(name="set", description="Set Prefix")
-    @app_commands.describe(prefix="[STRING] New Prefix")
-    @app_commands.checks.has_permissions(manage_guild=True)
-    async def set_prefix(self, interaction: discord.Interaction, prefix: str):
+    async def ping(self, interaction: discord.Interaction) -> None:
         """
-        Set Prefix
-
-        ...
-
-        Parameters
-        ----------
-        interaction : discord.Interaction
-            The interaction caused by a user performing a slash command
-        prefix : str
-            A guild's new prefix
-        """
-        db = SQL()
-        if not db.set_prefix(interaction.guild_id, prefix):
-            await interaction.response.send_message(f"Unable to change prefix.")
-        else:
-            await interaction.response.send_message(
-                f"Prefix successfully changed to `{prefix}`"
-            )
-        db.close()
-
-    @prefix_group.command(name="view", description="View Prefix")
-    @app_commands.checks.has_permissions(manage_guild=True)
-    async def view_prefix(self, interaction: discord.Interaction):
-        """
-        View Prefix
+        Check if the bot is online
 
         ...
 
@@ -789,25 +767,9 @@ class General(commands.Cog):
         interaction : discord.Interaction
             The interaction caused by a user performing a slash command
         """
-        db = SQL()
-        prefix = db.get_prefix(interaction.guild_id)
-        if not prefix:
-            await interaction.response.send_message(f"Unable to retrieve prefix.")
-        else:
-            await interaction.response.send_message(
-                f"Prefix currently set to `{prefix}`"
-            )
-        db.close()
-
-    @view_prefix.error
-    @set_prefix.error
-    async def prefix_error(self, interaction: discord.Interaction, error):
-        if type(error) == app_commands.MissingPermissions:
-            await interaction.response.send_message(
-                f"You lack the necessary permissions for this command. You need to be able to `manage guild`."
-            )
-        else:
-            await interaction.response.send_message(f"Error: {type(error)}, {error}")
+        await interaction.response.send_message(
+            f"Pong! `{round(interaction.client.latency*1000)}ms`"
+        )
 
 
 async def setup(bot):
