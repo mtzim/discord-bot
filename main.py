@@ -55,8 +55,8 @@ class CustomBot(commands.Bot):
         # Load all cogs
         self.initial_extensions = [
             "".join(f"cogs.{os.path.splitext(cog)[0]}")
-            for cog in os.listdir(".\cogs")
-            if os.path.isfile(os.path.join(".\cogs", cog)) and cog.endswith(".py")
+            for cog in os.listdir("./cogs")
+            if os.path.isfile(os.path.join("./cogs", cog)) and cog.endswith(".py")
         ]
 
         self.help_dict = {}
