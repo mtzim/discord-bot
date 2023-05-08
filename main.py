@@ -52,13 +52,11 @@ class CustomBot(commands.Bot):
 
         super().__init__(*args, help_command=None, **kwargs)
 
+        # Load all cogs
         self.initial_extensions = [
-            "cogs.timepresence",
-            "cogs.config",
-            "cogs.utility",
-            "cogs.moderation",
-            "cogs.general",
-            "cogs.chatbot",
+            "".join(f"cogs.{os.path.splitext(cog)[0]}")
+            for cog in os.listdir(".\cogs")
+            if os.path.isfile(os.path.join(".\cogs", cog)) and cog.endswith(".py")
         ]
 
         self.help_dict = {}
