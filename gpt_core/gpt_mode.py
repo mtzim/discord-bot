@@ -1,7 +1,7 @@
 import os
 import openai
-import gpt_utils
-from ratelimit import completions_with_backoff
+from . import gpt_utils
+from .ratelimit import completions_with_backoff
 from dotenv import load_dotenv
 
 
