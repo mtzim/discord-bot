@@ -34,7 +34,23 @@ class ChatBot(commands.Cog):
         # embed = discord.Embed(color=discord.Color.blue())
         # embed.add_field(name="\u2800", value=f"{response}", inline=False)
         # print(f"\n{response}\n")
-        await interaction.followup.send(content=response)
+        # print(response)
+
+        # TODO: Implement better workaround for handling reponses that exceed discord char limit
+        # Consider between pages with nav view or chain msgs with better formatting
+        resp_len = len(response)
+        discord_char_limit = 1800
+        if resp_len > discord_char_limit:
+            # Back up until space
+            while response[discord_char_limit - 1] != " ":
+                discord_char_limit -= 1
+            split_response = list()
+            split_response.append(f"{response[:discord_char_limit]}")
+            split_response.append(f"{response[discord_char_limit:]}")
+            await interaction.followup.send(content=split_response[0])
+            await interaction.followup.send(content=split_response[1])
+        else:
+            await interaction.followup.send(content=response)
 
     @app_commands.command(
         name="prompt",
